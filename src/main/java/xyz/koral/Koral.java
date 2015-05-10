@@ -287,11 +287,6 @@ public class Koral
 	
 	public Koral indices(Query... queries)
 	{
-		return indices(null, queries);
-	}
-	
-	public Koral indices(QID baseNamespace, Query... queries)
-	{
 		if (queries.length == 0) return this;
 		Query root = queries.length > 1 ? new CompositeQuery(queries) : queries[0];
 
@@ -305,7 +300,7 @@ public class Koral
 				{
 					ArrayQuery q = (ArrayQuery) query;
 					
-					QID qid = new QID(baseNamespace, q.getArrayID());
+					QID qid = q.getArrayID();
 					Array array = asArray(qid);
 					if (array == null) array = asArray(qid.parent());
 					if (array == null) throw new KoralError("Array not found: " + qid);
@@ -325,23 +320,24 @@ public class Koral
 		}
 		QueryArrayVerifier av = new QueryArrayVerifier();
 		av.consume(root);
-		if (av.sourceFiles.size() > 1) throw new KoralError("More than one files sources not supported for indices searching."); 
+		if (av.sourceFiles.size() > 1) throw new KoralError("More than one file source not supported for indices searching."); 
 		
 		SearchIndex searchIndex = pathToSearchIndex.get(new ArrayList<>(av.sourceFiles).get(0));
 		
 		long[] indices = searchIndex.search(root);
 		Arrays.sort(indices);
 		
-		if (usedIndices != null)
+		
+		Koral k = new Koral(arrays, usedIndices, pathToSearchIndex);
+		if (k.usedIndices != null)
 		{
-			usedIndices = logicalCombination(usedIndices, indices, root.occur);
+			k.usedIndices = logicalCombination(k.usedIndices, indices, root.occur);
 		}
 		else
 		{
-			usedIndices = indices;
+			k.usedIndices = indices;
 		}
-		
-		return this;
+		return k;
 	}
 	
 	

@@ -150,31 +150,6 @@ public class SearchIndex
 		} 
 	}
 	
-//	public void search(int[] indices, int addValue, String query, int stride)
-//	{
-//		try
-//		{
-//			searcher.search(fieldNames[stride], query, indexFieldName, indices, addValue);
-//		}
-//		catch (ParseException | IOException ex)
-//		{
-//			throw new KoralError(ex);
-//		}
-//	}
-//	
-//	public void search(int[] indices, int addValue, int stride, double from, double to)
-//	{
-//		try
-//		{
-//			Query q = NumericRangeQuery.newDoubleRange(fieldNames[stride], from, to, true, true);
-//			searcher.search(q, indexFieldName, indices, addValue);
-//		}
-//		catch (ParseException | IOException ex)
-//		{
-//			throw new KoralError(ex);
-//		}
-//	}
-	
 	
 	boolean indexExists()
 	{
