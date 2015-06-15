@@ -114,7 +114,7 @@ public class InMemorySparseArray implements WritableArray
 		increaseBy(noOfDataEntries - meta.stride);
 	}
 	
-	final int pitchSize(int col)
+	public final long pitchSize(long col)
 	{
 		int colIndex = cols.binarySearch(col);
 		if (colIndex < 0) return 0;
@@ -199,10 +199,15 @@ public class InMemorySparseArray implements WritableArray
 	{
 		List<Entry> entries = new ArrayList<>();
 		
-		int ps = pitchSize((int) index);
-		for (int i=0; i<ps; i++)
+		int colIndex = cols.binarySearch(index);
+		if (colIndex < 0) return entries;
+		
+		int pitchesStart = pitchOffset(colIndex);
+		int pitchesEndEx = pitchOffset(colIndex + 1);
+		
+		for (int i=pitchesStart; i<pitchesEndEx; i++)
 		{
-			entries.add(get(index, i));
+			entries.add(new VectorEntry(colIndex, pitches.getI(i), meta.stride, i * meta.stride, values));
 		}
 		
 		return entries;

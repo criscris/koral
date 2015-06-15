@@ -1,6 +1,7 @@
 package xyz.koral.internal;
 
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -153,10 +154,18 @@ public class LazyLoadSparseArray implements Array
 	public List<Entry> getPitch(long index)
 	{
 		ArrayPart p = getArrayPart(index);
-		if (p == null) return null;
+		if (p == null) return new ArrayList<Entry>();
 		return  p.loadedArray.getPitch(index);
 	}
 	
+	public long pitchSize(long index) 
+	{
+		ArrayPart p = getArrayPart(index);
+		if (p == null) return -1;
+		return  p.loadedArray.pitchSize(index);
+	}
+
+
 	public Iterator<Entry> iterator() 
 	{
 		return new Iterator<Entry>()

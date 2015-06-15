@@ -45,6 +45,13 @@ public class DenseDoubleVector implements DenseVector
 		add((double) value);
 	}
 	
+	public final void addTo(int index, double value) 
+	{
+		checkResize(index + 1);
+		data[index] += value;
+		size = Math.max(size, index + 1);
+	}
+	
 	public final String getS(int index) 
 	{
 		return Double.toString(data[index]);

@@ -10,6 +10,8 @@ public interface Array extends StreamIterable<Entry>
 	
 	long size();
 	
+	
+	long pitchSize(long index);
 	long maxPitchSize();
 	
 	int strideSize();

@@ -80,6 +80,11 @@ public class SubArray implements Array
 		for (Entry e : entries) ((VectorEntry) e).setIndex(index);
 		return entries;
 	}
+	
+	public long pitchSize(long index) 
+	{
+		return source.pitchSize(indices.getL((int) index));
+	}
 
 	public Class<?> type() 
 	{

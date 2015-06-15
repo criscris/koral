@@ -33,6 +33,29 @@ public class ArrayTest extends TestCase
     	assertEquals(0, v.binarySearch(1));
     }
     
+    public void testPitch() throws Exception
+    {
+    	InMemorySparseArray a = new InMemorySparseArray("a", "test", Double.class, 1, 100);
+    	a.set(0, 0, 1.0, 2.0, 3.0);
+    	a.set(1, 0, 0.0);
+    	a.set(1, 50, 57.0);
+    	a.set(1,  73, 12.0);
+    	a.set(1000, 10, 0.0, 1.0, 2.0, 3.0);
+    	
+    	List<Entry> entries = a.getPitch(1);
+    	assertEquals(3, entries.size());
+    	compareEntry(entries.get(0), 1, 0, 0.0);
+    	compareEntry(entries.get(1), 1, 50, 57.0);
+    	compareEntry(entries.get(2), 1, 73, 12.0);
+    }
+    
+    void compareEntry(Entry actual, long expectedIndex, long expectedPitchIndex, double expectedValue)
+    {
+    	assertEquals(expectedIndex, actual.index());
+    	assertEquals(expectedPitchIndex, actual.pitchIndex());
+    	assertEquals(expectedValue, actual.getD());
+    }
+    
     public void test1() throws Exception
     {
     	InMemorySparseArray a = new InMemorySparseArray("a", "test", Double.class);

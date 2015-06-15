@@ -1,12 +1,5 @@
 package xyz.koral;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -19,24 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.w3c.dom.Element;
-
 import xyz.koral.Query.Occur;
-import xyz.koral.internal.ArrayInfo;
-import xyz.koral.internal.ArrayStream;
-import xyz.koral.internal.ArrayStreamWriter;
 import xyz.koral.internal.DenseLongVector;
-import xyz.koral.internal.FileSource;
-import xyz.koral.internal.Index;
-import xyz.koral.internal.KeyIndices;
 import xyz.koral.internal.KoralError;
-import xyz.koral.internal.LRUQueue;
 import xyz.koral.internal.LazyLoadSparseArray;
 import xyz.koral.internal.PitchIterator;
 import xyz.koral.internal.SearchIndex;
-import xyz.koral.internal.Source;
 import xyz.koral.internal.StreamIterable;
-import xyz.koral.internal.XmlDocument;
 
 public class Koral 
 {
@@ -49,6 +31,8 @@ public class Koral
 	
 	Map<Path, SearchIndex> pathToSearchIndex = new HashMap<>();
 	
+	long defaultArrayCacheSize = 50000000; // bytes
+	Map<String, Long> qidToCacheSize = new HashMap<>();
 	
 	public Koral()
 	{
@@ -67,16 +51,15 @@ public class Koral
 		this.pathToSearchIndex = pathToSearchIndex;
 	}
 	
-	public Koral(File... files) 
-	{
-		for (File f : files) add(f);
-	}
-	
 	public int noOfArrays()
 	{
 		return arrays.size();
 	}
 	
+	
+	/**
+	 * buggy with several namespace leaves
+	 */
 	public List<String> arrayIDs(String baseNamespace)
 	{
 		List<String> ids = new ArrayList<String>();
@@ -89,80 +72,12 @@ public class Koral
 		return ids;
 	}
 	
-	public XmlDocument add(File file)
+	public List<String> arrayIDs(QID baseNamespace)
 	{
-		File indexFile = new Index(file).getIndexFile();
-		try 
-		{
-			XmlDocument xml = new XmlDocument(new FileInputStream(indexFile));
-			FileSource source = new FileSource(file);
-			List<LazyLoadSparseArray> arraysOfFile = add("", xml.root(), source);
-			pathToSearchIndex.put(source.getFile(), new SearchIndex(source.getFile(), arraysOfFile));
-			return xml;
-		} 
-		catch (FileNotFoundException ex) 
-		{
-			throw new KoralError(ex);
-		}
-		
+		return arrayIDs(baseNamespace.get());
 	}
 	
-	private LazyLoadSparseArray parseDiskArray(Source source, String namespace, Element arrayElem)
-	{
-		String maxPitch = arrayElem.getAttribute("maxPitch");
-		String stride = arrayElem.getAttribute("stride");
-		String[] strideNames = null;
-		if (stride == null || stride.length() < 1)
-		{
-			strideNames = new String[] { "" };
-		}
-		else
-		{
-			strideNames = stride.split("" + ArrayStream.strideSep);
-		}
-		String typeInfo = arrayElem.getAttribute("type");
-		ArrayInfo meta = new ArrayInfo(new QID(namespace, arrayElem.getAttribute("id")), 
-				maxPitch == null || maxPitch.length() < 1 ? 1 : new Long(maxPitch), strideNames,
-				typeInfo.equals("numeric") ? Double.class : String.class);
-		long count = new Long(arrayElem.getAttribute("count"));
-		long sourceOffset = new Long(arrayElem.getAttribute(XmlDocument.sourceOffsetAtt));
-		long noOfBytes = new Long(arrayElem.getAttribute(XmlDocument.noOfBytesAtt));
-		
-		KeyIndices keyIndices = new KeyIndices(arrayElem);
-		keyIndices.indices.add(count);
-		keyIndices.byteOffsets.add(noOfBytes);
-		for (int i=0; i<keyIndices.byteOffsets.size(); i++)
-		{
-			keyIndices.byteOffsets.addTo(i, sourceOffset);
-		}
-		
-		LRUQueue queue = new LRUQueue(50000000);
-		LazyLoadSparseArray a = new LazyLoadSparseArray(meta, typeInfo, source, keyIndices.indices, keyIndices.byteOffsets, queue);
-		return a;
-	}
-	
-	private List<LazyLoadSparseArray> add(String namespace, Element elem, Source source)
-	{
-		String id = elem.getAttribute("id");
-		List<LazyLoadSparseArray> list = new ArrayList<>();
-		switch (elem.getTagName())
-		{
-		case "array": 
-			LazyLoadSparseArray a = parseDiskArray(source, namespace, elem);
-			add(a);
-			list.add(a);
-			break;
-		case "koral": 
-			namespace += namespace.length() > 0 && id.length() > 0 ? "." : "";
-			namespace += id;
-			for (Element child : XmlDocument.children(elem, "array", "koral"))
-			{
-				list.addAll(add(namespace, child, source));
-			}
-			break;
-		}
-		return list;
-	}
+
 	
 	public Koral(Array... arrays)
 	{
@@ -176,105 +91,19 @@ public class Koral
 			this.arrays.add(a);
 		}
 	}
-
 	
-	public void save(OutputStream os) 
+	public void add(Koral... korals)
 	{
-		if (arrays.size() == 0) throw new KoralError("cannot save KoralResource: no array.");
-		
-		QID base = arrays.get(0).qid().getNamespaceQID();
-		for (int i=1; i<arrays.size(); i++)
+		for (Koral k : korals)
 		{
-			QID base1 = arrays.get(i).qid().getNamespaceQID();
-			int levels = base.noOfSameLevels(base1);
-			base = base.base(levels);
-		}
-		System.out.println("root namespace == " + base);
-		
-		class Intender
-		{
-			String intend = "    ";
-			int intendLevel = 0;
-			
-			void up()
+			for (Array a : k.arrays)
 			{
-				intendLevel++;
+				Array old = k.asArray(a.qid());
+				if (old != null) k.replace(old, a);
+				else this.arrays.add(a);
 			}
-			
-			void down()
-			{
-				intendLevel--;
-			}
-			
-			String get()
-			{
-				StringBuilder sb = new StringBuilder();
-				for (int i=0; i<intendLevel; i++) sb.append(intend);
-				return sb.toString();
-			}
-		}
-		Intender intender = new Intender();
-		
-		
-		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, XmlDocument.cs));
-		try
-		{
-			writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-			writer.write("<koral id=\"" + base + "\" version=\"0.2\" xmlns=\"http://koral.xyz/schema\">\n");
-		
-			for (int i=0; i<arrays.size(); i++)
-			{
-				Array a = arrays.get(i);
-				QID aQID = a.qid().split(base);
-				String namespace = aQID.getNamespace();
-				
-				if (namespace.length() > 0)
-				{
-					intender.up();
-					writer.write(intender.get());
-					writer.write("<koral id=\"" + namespace + "\">\n");
-					
-				}
-				
-				intender.up();
-				writer.write(intender.get());
-				writer.write("<array ");
-				writer.write("id=\"" + aQID.getID() + "\" ");
-				
-				writer.write("type=\"" + a.typeLiteral() + "\" ");
-				if (! (a.strideSize() == 1 && a.strideName(0).length() == 0)) 
-				{
-					String s = a.strideName(0);
-					for (int j=1; j<a.strideSize(); j++)
-					{
-						s += ArrayStream.strideSep + a.strideName(j);
-					}
-					writer.write("stride=\"" + s + "\" ");
-				}
-					
-				if (a.maxPitchSize() > 1) writer.write("maxPitch=\"" + a.maxPitchSize() + "\" ");
-				writer.write("count=\"" + a.size() + "\"");
-				writer.write(">");
-				
-				a.forEach(new ArrayStreamWriter(writer, true));
-				
-				writer.write("</array>\n");
-				intender.down();
-				
-				if (namespace.length() > 0)
-				{
-					writer.write(intender.get());
-					writer.write("</koral>\n");
-					intender.down();
-				}
-			}
-			
-			writer.write("</koral>");
-			writer.close();
-		}
-		catch (IOException ex)
-		{
-			throw new KoralError(ex);
+			pathToSearchIndex.putAll(k.pathToSearchIndex);
+			qidToCacheSize.putAll(k.qidToCacheSize);
 		}
 	}
 	
@@ -694,6 +523,11 @@ public class Koral
 		};
 	}
 	
+	public <T> StreamIterable<T> asTable(QID baseNamespace, Class<T> clazz, List<String> ids)
+	{
+		return asTable(baseNamespace.get(), clazz, ids.toArray(new String[0]));
+	} 
+	
 	public <T> StreamIterable<T> asTable(String baseNamespace, Class<T> clazz, String... ids)
 	{
 		Map<String, Array> idToArray = idToArray(baseNamespace, ids);
@@ -912,6 +746,11 @@ public class Koral
 	}
 	
 	public StreamIterable<Map<String, List<Entry>>> asTable(String baseNamespace, List<String> ids)
+	{
+		return asTable(baseNamespace, ids.toArray(new String[0]));
+	}
+	
+	public StreamIterable<Map<String, List<Entry>>> asTable(String baseNamespace, String... ids)
 	{
 		Map<String, Array> idToArray = new HashMap<String, Array>();
 		for (String qID : ids)

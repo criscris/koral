@@ -3,6 +3,7 @@ package xyz.koral.internal;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -17,6 +18,7 @@ import java.util.logging.Logger;
 import xyz.koral.Array;
 import xyz.koral.Entry;
 import xyz.koral.Koral;
+import xyz.koral.KoralIO;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -25,7 +27,6 @@ public class KoralServices
 {
 	private final static Logger L = Logger.getLogger(KoralServices.class.getName()); 
 	
-	Map<File, XmlDocument> addedFilesMap = new HashMap<>();
 	Koral k = new Koral();
 	
 	static final String fileUri = "/file";
@@ -37,12 +38,11 @@ public class KoralServices
 			{
 				String uri = t.getRequestURI().getPath().substring(fileUri.length());
 				File file = new File(uri);
-				XmlDocument xml = addedFilesMap.get(file);
-				if (xml == null)
-				{
-					xml = k.add(file);
-					addedFilesMap.put(file, xml);
-				}
+				Koral kk = KoralIO.load(file);
+				k.add(kk);
+				
+				File indexFile = new Index(file).getIndexFile();
+				XmlDocument xml = new XmlDocument(new FileInputStream(indexFile));
 				
 				t.getResponseHeaders().add("Content-Type", "text/xml;charset=utf-8");
 				t.sendResponseHeaders(200, 0);
@@ -109,9 +109,6 @@ public class KoralServices
 				t.sendResponseHeaders(400, 0);
 				t.getResponseBody().close();
 			}
-
-			
-		
 		}
 	}
 	

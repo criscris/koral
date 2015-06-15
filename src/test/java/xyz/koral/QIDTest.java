@@ -20,6 +20,15 @@ public class QIDTest extends TestCase
     
     public void test0() throws Exception
     {
+    	try 
+    	{
+    		assertEquals("tickercpn-w", new QID("tickercpn-w").getID());
+    	    fail("no execption thrown for wrong QID");
+    	} catch (KoralError ex) 
+    	{
+    		
+    	}
+    	
     	assertEquals(4, new QID("nHa.b.cde_3H232a.acHqszqa").levels.size());
     	
     	assertEquals("bcd", new QID("na.bcd").getID());

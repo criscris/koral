@@ -362,11 +362,11 @@ class Searcher
 	
 	public long[] search(Query q, String indexField) throws ParseException, IOException
 	{
-		System.out.println("Start search in " + reader.numDocs() + " docs. q=" + q.getClass());
+		//System.out.println("Start search in " + reader.numDocs() + " docs. q=" + q.getClass());
 		
 		long time = System.currentTimeMillis();
 		TopDocs results = searcher.search(q, 1);
-		System.out.println("query " + q + " took " + (System.currentTimeMillis() - time) + " ms with " + results.totalHits + " hits.");
+		//System.out.println("query " + q + " took " + (System.currentTimeMillis() - time) + " ms with " + results.totalHits + " hits.");
 		
 		
 		if (results.totalHits == 0) return new long[0];

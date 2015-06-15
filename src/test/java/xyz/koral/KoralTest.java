@@ -51,7 +51,7 @@ public class KoralTest extends TestCase
     	
     	Koral k = new Koral(a, b);
     	ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    	k.save(bos);
+    	KoralIO.save(k, bos);
     	bos.flush();
     	String s = new String(bos.toByteArray(), XmlDocument.cs);
     	System.out.println(s);
@@ -68,7 +68,7 @@ public class KoralTest extends TestCase
         	  + "<array id=\"b\" type=\"numeric\" count=\"4\">1000.0|2000.0|3|4.5</array>\n"
         	  + "<array id=\"c\" type=\"string\" count=\"3\">heinz|hinz\n|kunz</array>\n" + endTag);
         	
-        	Koral k = new Koral(file);
+        	Koral k = KoralIO.load(file);
   
         	Array a = k.asArray("na.a");
         	
@@ -87,7 +87,7 @@ public class KoralTest extends TestCase
         	assertEquals("kunz", c.get(2).getS());
         	
         	ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        	k.save(bos);
+        	KoralIO.save(k, bos);
         	String s = new String(bos.toByteArray(), XmlDocument.cs);
         	System.out.println(s);
     	}
@@ -123,7 +123,7 @@ public class KoralTest extends TestCase
         		"<array id=\"a\" type=\"numeric\" count=\"" + test.length + "\">" + sb.toString() + "</array>\n"
         	  + endTag);
         	
-        	Koral k = new Koral(file);
+        	Koral k = KoralIO.load(file);
   
         	Array a = k.asArray("na.a");
         	
@@ -160,7 +160,7 @@ public class KoralTest extends TestCase
         		"<array id=\"a\" type=\"numeric\" maxPitch=\"" + testData.rows + "\" count=\"" + testData.cols + "\">" + content + "</array>\n"
         	  + endTag);
         	
-        	Koral k = new Koral(file);
+        	Koral k = KoralIO.load(file);
   
         	Array a = k.asArray("na.a");
         	
