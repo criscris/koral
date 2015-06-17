@@ -148,8 +148,17 @@ public class KeyIndices
 	{
 		ArrayStreamReader reader = new ArrayStreamReader(arrayElem.getTextContent());
 		reader.forEach(entry -> {
-			indices.add(new Long(entry.getS(0)));
-			byteOffsets.add(new Long(entry.getS(1)));
+			try
+			{
+				long i = new Long(entry.getS(0));
+				long o = new Long(entry.getS(1));
+				indices.add(i);
+				byteOffsets.add(o);
+			}
+			catch (NumberFormatException ex)
+			{
+				// can happen with empty array (empty string assumed to be an entry)
+			}
 		});
 	}
 }

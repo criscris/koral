@@ -98,9 +98,9 @@ public class Koral
 		{
 			for (Array a : k.arrays)
 			{
-				Array old = k.asArray(a.qid());
+				Array old = asArray(a.qid());
 				if (old != null) k.replace(old, a);
-				else this.arrays.add(a);
+				else arrays.add(a);
 			}
 			pathToSearchIndex.putAll(k.pathToSearchIndex);
 			qidToCacheSize.putAll(k.qidToCacheSize);
@@ -108,10 +108,15 @@ public class Koral
 	}
 	
 	
-	void replace(Array oldArray, Array newArray)
+	public void replace(Array oldArray, Array newArray)
 	{
 		int index = arrays.indexOf(oldArray);
 		arrays.set(index, newArray);
+	}
+	
+	public Koral indices(long[] indices)
+	{
+		return new Koral(arrays, indices, pathToSearchIndex);
 	}
 	
 	public Koral indices(Query... queries)
@@ -421,6 +426,11 @@ public class Koral
 		return idToArray;
 	}
 	
+	public <T> StreamIterable<T> asTableFiltered(QID baseNamespace, Class<T> clazz, List<String> ids)
+	{
+		return asTableFiltered(baseNamespace.get(), clazz, ids.toArray(new String[0]));
+	}
+	
 	public <T> StreamIterable<T> asTableFiltered(String baseNamespace, Class<T> clazz, String... ids)
 	{
 		if (usedIndices == null) throw new KoralError("apply indices filter before calling Koral.asTableFiltered");
@@ -440,7 +450,7 @@ public class Koral
 			void fill(long index, Object o)
 			{
 				List<Entry> entries = array.getPitch(index);
-				if (entries == null) return; 
+				if (entries == null || entries.size() == 0) return; 
 				
 				try 
 				{

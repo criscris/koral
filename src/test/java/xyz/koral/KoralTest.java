@@ -377,6 +377,30 @@ public class KoralTest extends TestCase
 			assertEquals(c.get(j).getS(), result.get(j).get(2).get(0).getS());
 		}
     }
+    
+    public void testEmpyArray() throws Exception
+    {
+    	QID qid = new QID("test.test");
+    	InMemorySparseArray a = new InMemorySparseArray(qid, String.class, 1, 1);
+    	
+    	Path path = Files.createTempDirectory("koral");
+    	try
+    	{
+        	File file = new File(path.toString(), "testkoral.xml");
+        	System.out.println(file.getAbsolutePath());
+        	
+        	KoralIO.save(new Koral(a), new FileOutputStream(file));
+        	
+        	Koral k = KoralIO.load(file);
+        	Array result = k.arrays.get(0);
+        	assertEquals(a.size(), result.size());
+    	}
+    	finally
+    	{
+    		deleteTemp(path);
+    	}
+    	
+    }
 }
 
 class TestR

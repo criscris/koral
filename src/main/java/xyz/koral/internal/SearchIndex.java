@@ -270,7 +270,7 @@ public class SearchIndex
 					}
 					
 					count++;
-					if (count % (maxCount/10) == 0) System.out.print(".");
+					if (count % (Math.max(10, maxCount)/10) == 0) System.out.print(".");
 				}
 
 			}
