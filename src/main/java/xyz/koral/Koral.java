@@ -333,6 +333,13 @@ public class Koral
 				field.set(o, values);
 			};
 			break;
+		case "long[]":
+			setter = (o, entries) -> {
+				long[] values = new long[entries.size()];
+				for (int i=0; i<entries.size(); i++) values[i] = entries.get(i).getL();
+				field.set(o, values);
+			};	
+			break;
 		case "double[]":
 			setter = (o, entries) -> {
 				double[] values = new double[entries.size()];

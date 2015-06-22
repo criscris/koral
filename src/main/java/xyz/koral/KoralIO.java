@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,7 +50,6 @@ public class KoralIO
 		return load(true, files);
 	}
 	
-	
 	public static Koral load(boolean initSearchIndex, File ... files)
 	{
 		Koral k = new Koral();
@@ -63,7 +63,11 @@ public class KoralIO
 					XmlDocument xml = new XmlDocument(new FileInputStream(indexFile));
 					FileSource source = new FileSource(file);
 					List<LazyLoadSparseArray> arraysOfFile = add("", xml.root(), source);
-					if (initSearchIndex) k.pathToSearchIndex.put(source.getFile(), new SearchIndex(source.getFile(), arraysOfFile));
+					System.out.println("initSearchIndex=" + initSearchIndex);
+					if (initSearchIndex) 
+					{
+						k.pathToSearchIndex.put(source.getFile(), new SearchIndex(source.getFile(), arraysOfFile));
+					}
 					return xml;
 				} 
 				catch (FileNotFoundException ex) 
@@ -200,7 +204,6 @@ public class KoralIO
 							actualSize = Math.max(actualSize, result.index() + 1);
 							actualMaxPitchSize = Math.max(actualMaxPitchSize, result.pitchIndex() + 1);
 						}
-						if (result == null) throw new KoralError("impossible");
 						return result;
 					}
 				};
@@ -294,6 +297,14 @@ public class KoralIO
 								entries.add(new VectorEntry(index, 0, 1, 0, data));
 								return entries;
 							}, Double.class);
+				case "float": return new ArrayImpl((o, index) -> 
+							{
+								DenseDoubleVector data = new DenseDoubleVector(1);
+								data.add(field.getFloat(o));
+								List<Entry> entries = new ArrayList<>();
+								entries.add(new VectorEntry(index, 0, 1, 0, data));
+								return entries;
+							}, Double.class);
 				case "java.lang.String": return new ArrayImpl((o, index) -> 
 							{
 								DenseStringVector data = new DenseStringVector(1);
@@ -343,6 +354,19 @@ public class KoralIO
 							}
 							return entries;
 						}, Double.class);
+				case "long[]": return new ArrayImpl((o, index) -> 
+				{
+					long[] values = (long[]) field.get(o);
+					if (values == null) return new ArrayList<Entry>();
+					DenseLongVector data = new DenseLongVector(values.length);
+					for (long v : values) data.add(v);
+					List<Entry> entries = new ArrayList<>(values.length);
+					for (int i=0; i<values.length; i++)
+					{
+						entries.add(new VectorEntry(index, i, 1, i, data));
+					}
+					return entries;
+				}, Double.class);
 				case "java.lang.String[]": return new ArrayImpl((o, index) -> 
 						{
 							String[] values = (String[]) field.get(o);
@@ -364,11 +388,13 @@ public class KoralIO
 		}
 		FieldAnalzyer fieldAnalzyer = new FieldAnalzyer();
 		
-		for (Field field : clazz.getDeclaredFields())
+		for (Field field : clazz.getFields()) //.getDeclaredFields())
 		{
 			if (field.getName().equals("index") && field.getGenericType().getTypeName().equals("long")) continue; // ignore index field
+			if (Modifier.isTransient(field.getModifiers())) continue;
 			ArrayImpl array = fieldAnalzyer.getArray(field);
 			if (array == null) continue;
+			field.setAccessible(true);
 			array.qid = new QID(baseID, field.getName());
 			arrays.add(array);
 		}
@@ -378,6 +404,7 @@ public class KoralIO
 		{
 			final int bufferSize = 2000;
 			
+			long time = System.currentTimeMillis();
 			long index = 0;
 			boolean noMoreObjects = false;
 			Iterator<T> iter = objects.iterator();
@@ -419,6 +446,7 @@ public class KoralIO
 						}
 					}
 					index++;
+					if (index % 1000000 == 0) System.out.println(index + " " + (System.currentTimeMillis() - time) + " ms.");
 				}
 			}
 		}
@@ -436,7 +464,7 @@ public class KoralIO
 				try
 				{
 					a.tempDir = Files.createTempDirectory("koral");
-					//System.out.println("Created " + a.tempDir.toString());
+					System.out.println("Created " + a.tempDir.toString());
 					Koral k = new Koral(a);
 					new Thread(() ->
 					{
@@ -583,6 +611,11 @@ public class KoralIO
 	
 	public static void save(List<Array> arrays, OutputStream os) 
 	{
+		save(arrays, null, os);
+	}
+	
+	public static void save(List<Array> arrays, long[] indices, OutputStream os) 
+	{
 		if (arrays.size() == 0) throw new KoralError("cannot save KoralResource: no array.");
 		
 		QID base = arrays.get(0).qid().getNamespaceQID();
@@ -658,7 +691,40 @@ public class KoralIO
 				writer.write("count=\"" + a.size() + "\"");
 				writer.write(">");
 				
-				a.forEach(new ArrayStreamWriter(writer, true));
+				if (indices == null)
+				{
+					a.forEach(new ArrayStreamWriter(writer, true));
+				}
+				else
+				{
+					ArrayStreamWriter w = new ArrayStreamWriter(writer, true);
+					for (int j=0; j<indices.length; j++)
+					{
+						List<Entry> entries = a.getPitch(indices[j]);
+						if (entries == null) continue;
+						int index = j;
+						for (Entry e : entries)
+						{
+							// change index
+							w.accept(new Entry()
+							{
+								public long index() { return index; }
+								public long pitchIndex() { return e.pitchIndex(); }
+								public int strideSize() { return e.strideSize(); }
+								public String getS(int strideIndex) { return e.getS(strideIndex); }
+								public String[] getStrideS() { return e.getStrideS(); }
+								public float getF(int strideIndex) { return e.getF(); }
+								public float[] getStrideF() { return getStrideF(); }
+								public double getD(int strideIndex) { return e.getD(strideIndex); }
+								public double[] getStrideD() { return e.getStrideD(); }
+								public int getI(int strideIndex) { return e.getI(strideIndex); }
+								public int[] getStrideI() { return e.getStrideI(); }
+								public long getL(int strideIndex) { return e.getL(strideIndex); }
+								public long[] getStrideL() { return e.getStrideL(); }
+							});
+						}
+					}
+				}
 				
 				writer.write("</array>\n");
 				intender.down();
