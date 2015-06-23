@@ -72,7 +72,8 @@ public class DenseStringVector implements DenseVector
 
 	public final int getI(int index) 
 	{
-		return new Integer(data.get(index));
+		Double d = getD(index);
+		return d == null ? null : d.intValue();
 	}
 
 	public final long getL(int index) 

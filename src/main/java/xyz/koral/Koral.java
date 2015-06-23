@@ -397,7 +397,7 @@ public class Koral
 		{
 			T o = clazz.newInstance();
 			
-			for (Field field : clazz.getDeclaredFields())
+			for (Field field : clazz.getFields()) //getDeclaredFields())
 			{
 				Array a = idToArray.get(field.getName());
 				if (a == null) continue;
@@ -475,7 +475,7 @@ public class Koral
 			Field field;	
 		}
 		Indexer indexer = new Indexer();
-		for (Field field : clazz.getDeclaredFields())
+		for (Field field : clazz.getFields()) //getDeclaredFields())
 		{
 			Array a = idToArray.get(field.getName());
 			if (a == null) 
@@ -612,7 +612,7 @@ public class Koral
 			Field field;	
 		}
 		Indexer indexer = new Indexer();
-		for (Field field : clazz.getDeclaredFields())
+		for (Field field : clazz.getFields()) //getDeclaredFields())
 		{
 			Array a = idToArray.get(field.getName());
 			if (a == null) 
