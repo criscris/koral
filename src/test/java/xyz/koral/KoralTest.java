@@ -405,12 +405,12 @@ public class KoralTest extends TestCase
 
 class TestR
 {
-	long index;
-	double a = Double.NaN;
-	double b = Double.NaN;
-	List<String> c;
-	double[] d;
-	List<List<String>> e;
+	public long index;
+	public double a = Double.NaN;
+	public double b = Double.NaN;
+	public List<String> c;
+	public double[] d;
+	public List<List<String>> e;
 	
 	public String toString() 
 	{
