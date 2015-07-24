@@ -129,6 +129,11 @@ public class QID
 	{
 		return levels.size();
 	}
+	
+	public String get(int level)
+	{
+		return levels.get(level);
+	}
 
 	public int hashCode() 
 	{

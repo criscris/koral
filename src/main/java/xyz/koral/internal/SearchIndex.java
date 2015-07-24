@@ -54,7 +54,7 @@ public class SearchIndex
 	Searcher searcher;
 	Analyzer analyzer = new StandardAnalyzer();
 	
-	public SearchIndex(Path sourceFile, List<LazyLoadSparseArray> arrays)
+	public SearchIndex(Path sourceFile, List<LazyLoadSparseArray> arrays) throws IOException
 	{
 		this.sourceFile = sourceFile;
 		this.arrays = arrays;
@@ -76,7 +76,8 @@ public class SearchIndex
 			}
 		}
 		
-		if (!indexExists()) createIndex();
+		if (!indexExists(Files.getLastModifiedTime(sourceFile).toMillis())) createIndex();
+		
 		
 		try
 		{
@@ -151,10 +152,19 @@ public class SearchIndex
 	}
 	
 	
-	boolean indexExists()
+	boolean indexExists(long newerThan)
 	{
 		File dir = getSearchIndexDir();
-		return dir.exists() && dir.isDirectory() && dir.list().length > 0;
+		if (!dir.exists() || !dir.isDirectory() || dir.list().length == 0) return false;
+		
+		long lastModified = 0;
+		for (File file : dir.listFiles())
+		{
+			if (file.getName().startsWith(".")) continue;
+			lastModified = Math.max(lastModified, file.lastModified());
+		}
+		
+		return lastModified > newerThan;
 	}
 	
 	File getSearchIndexDir()

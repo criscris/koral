@@ -337,7 +337,6 @@ public class InMemorySparseArray implements WritableArray
 				{
 					currentIndex++; 
 				}
-				
 				return entry;
 			}
 		};

@@ -74,7 +74,7 @@ public class LazyLoadSparseArray implements Array
 		{
 			parts[i] = new ArrayPart(startIndices.getL(i), startIndices.getL(i+1), byteOffsets.getL(i), byteOffsets.getL(i+1) - byteOffsets.getL(i));
 		}
-		System.out.println(meta.qid + ": " + parts.length + " array parts.");
+		//System.out.println(meta.qid + ": " + parts.length + " array parts.");
 	}
 	
 	

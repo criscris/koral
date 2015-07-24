@@ -10,8 +10,8 @@ public interface StreamIterable<T> extends Iterable<T>
         return StreamSupport.stream(spliterator(), false);
     }
     
-//    default Stream<T> parallelStream() 
-//    {
-//        return StreamSupport.stream(spliterator(), true);
-//    }
+    default Stream<T> parallelStream() 
+    {
+        return StreamSupport.stream(spliterator(), true);
+    }
 }

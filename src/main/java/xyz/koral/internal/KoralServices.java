@@ -68,7 +68,6 @@ public class KoralServices
 			try 
 			{
 				String uri = t.getRequestURI().getPath().substring(arrayUri.length() + 1);
-				System.out.println("auri " + uri);
 				Array a = k.asArray(uri);
 				if (a == null) throw new KoralError("Array id not found.");
 				

@@ -99,7 +99,7 @@ public class Koral
 			for (Array a : k.arrays)
 			{
 				Array old = asArray(a.qid());
-				if (old != null) k.replace(old, a);
+				if (old != null) replace(old, a);
 				else arrays.add(a);
 			}
 			pathToSearchIndex.putAll(k.pathToSearchIndex);
@@ -310,7 +310,46 @@ public class Koral
 		return asTable(null, clazz, qualifiedIDs);
 	}
 	
-	private FieldSetter getFieldSetter(Field field)
+	private static Map<Array, FieldSetter> getFieldMapping(Map<String, Array> localIDtoArray, Class<?> clazz)
+	{
+		Map<Array, FieldSetter> map = new HashMap<>();
+		
+		class FieldHierarchy
+		{
+			FieldSetter get(QID id, int level, Class<?> clazz)
+			{
+				Field f = null;
+				try 
+				{
+					f = clazz.getField(id.get(level));
+				} 
+				catch (NoSuchFieldException | SecurityException ex) 
+				{
+				}
+				if (f == null) return null;
+				
+				if (level == id.noOfLevels() - 1)
+				{
+					return getFieldSetter(f);
+				}
+				return new FieldSetterParent(f, get(id, level + 1, f.getType()));
+			}
+		}
+		
+		for (Map.Entry<String, Array> entry : localIDtoArray.entrySet())
+		{
+			QID localID = new QID(entry.getKey());
+			FieldSetter f = new FieldHierarchy().get(localID, 0, clazz);
+			if (f != null)
+			{
+				map.put(entry.getValue(), f);
+			}
+		}
+		
+		return map;
+	}
+	
+	private static FieldSetter getFieldSetter(Field field)
 	{
 		FieldSetter setter = null;
 		switch (field.getGenericType().getTypeName())
@@ -427,7 +466,7 @@ public class Koral
 		{
 			QID qid = new QID(baseNamespace, qID);
 			Array a = asArray(qid);
-			if (a != null) idToArray.put(qid.getID(), a);
+			if (a != null) idToArray.put(qID, a);
 		}
 		if (idToArray.size() == 0) throw new KoralError("No arrays matched.");
 		return idToArray;
@@ -612,7 +651,7 @@ public class Koral
 			Field field;	
 		}
 		Indexer indexer = new Indexer();
-		for (Field field : clazz.getFields()) //getDeclaredFields())
+		for (Field field : clazz.getFields()) 
 		{
 			Array a = idToArray.get(field.getName());
 			if (a == null) 
@@ -624,10 +663,14 @@ public class Koral
 				continue;
 			}
 			
-			FieldSetter setter = getFieldSetter(field);
-			if (setter == null) continue;
-			cols.add(new Column(a.iterator(), setter));
+			//cols.add(new Column(a.iterator(), setter));
 		}
+		for (Map.Entry<Array, FieldSetter> entry : getFieldMapping(idToArray, clazz).entrySet())
+		{
+			cols.add(new Column(entry.getKey().iterator(), entry.getValue()));
+		}
+		
+		
 		if (cols.size() == 0) throw new KoralError("no class members matched with array ids.");
 
 		return new StreamIterable<T>() 
@@ -883,4 +926,22 @@ public class Koral
 interface FieldSetter
 {
 	void set(Object o, List<Entry> entries) throws IllegalArgumentException, IllegalAccessException;
+}
+
+class FieldSetterParent implements FieldSetter
+{
+	FieldSetter child;
+	Field parent;
+	
+	public FieldSetterParent(Field parent, FieldSetter child) 
+	{
+		this.parent = parent;
+		this.child = child;
+	}
+	
+	public void set(Object o, List<Entry> entries) throws IllegalArgumentException, IllegalAccessException 
+	{
+		Object oc = parent.get(o);
+		child.set(oc, entries);
+	}
 }

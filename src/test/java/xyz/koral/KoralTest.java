@@ -236,7 +236,7 @@ public class KoralTest extends TestCase
     	e.add("a.1", "a.2", "b.1", "b.2", "2a.1", "2a.2");
     	
     	Koral k = new Koral(a, b, c, d, e);
-    	k.asTable(TestR.class, "n.a", "n.b", "n.c", "n.d", "n.e").forEach(t -> System.out.println(t));
+    	k.asTable("n", TestR.class, "a", "b", "c", "d", "e").forEach(t -> System.out.println(t));
     }
     
     public void testTableMap() throws Exception

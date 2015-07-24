@@ -63,14 +63,14 @@ public class KoralIO
 					XmlDocument xml = new XmlDocument(new FileInputStream(indexFile));
 					FileSource source = new FileSource(file);
 					List<LazyLoadSparseArray> arraysOfFile = add("", xml.root(), source);
-					System.out.println("initSearchIndex=" + initSearchIndex);
+					//System.out.println("initSearchIndex=" + initSearchIndex);
 					if (initSearchIndex) 
 					{
 						k.pathToSearchIndex.put(source.getFile(), new SearchIndex(source.getFile(), arraysOfFile));
 					}
 					return xml;
 				} 
-				catch (FileNotFoundException ex) 
+				catch (IOException ex) 
 				{
 					throw new KoralError(ex);
 				}
@@ -148,7 +148,6 @@ public class KoralIO
 		{
 			int strideSize = 1;
 			FieldGetter getter;
-			Class<?> type;
 			QID qid;
 			
 			CyclicBarrier barrier;
@@ -165,10 +164,9 @@ public class KoralIO
 			boolean noMoreObjects = false;
 			Queue<Entry> buffer = new LinkedList<>();
 			
-			public ArrayImpl(FieldGetter getter, Class<?> type)
+			public ArrayImpl(FieldGetter getter)
 			{
 				this.getter = getter;
-				this.type = type;
 			}
 			
 			public Iterator<Entry> iterator() 
@@ -256,12 +254,12 @@ public class KoralIO
 
 			public Class<?> type() 
 			{
-				return type;
+				return getter.type();
 			}
 
 			public String typeLiteral() 
 			{
-				return type == String.class ? "string" : "numeric";
+				return type() == String.class ? "string" : "numeric";
 			}
 		}
 		List<ArrayImpl> arrays = new ArrayList<>();
@@ -269,121 +267,166 @@ public class KoralIO
 		class FieldAnalzyer
 		{
 			@SuppressWarnings("unchecked")
-			ArrayImpl getArray(Field field)
+			List<FieldGetter> getArray(Field field)
 			{
+				String name = field.getName();
+				field.setAccessible(true);
+				List<FieldGetter> getters = new ArrayList<>();
+				if (Modifier.isTransient(field.getModifiers())) return getters;
+				
 				switch (field.getGenericType().getTypeName())
 				{
-				case "int": return new ArrayImpl((o, index) -> 
+				case "int": getters.add(new FieldGetter(Integer.class, name)
+						{
+							List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException 
 							{
 								DenseIntegerVector data = new DenseIntegerVector(1);
 								data.add(field.getInt(o));
 								List<Entry> entries = new ArrayList<>();
 								entries.add(new VectorEntry(index, 0, 1, 0, data));
 								return entries;
-							}, Integer.class);
-				case "long": return new ArrayImpl((o, index) -> 
+							}
+						}); break;
+				case "long": getters.add(new FieldGetter(Long.class, name)
+						{
+							List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException 
 							{
 								DenseLongVector data = new DenseLongVector(1);
 								data.add(field.getLong(o));
 								List<Entry> entries = new ArrayList<>();
 								entries.add(new VectorEntry(index, 0, 1, 0, data));
 								return entries;
-							}, Long.class);
-				case "double": return new ArrayImpl((o, index) -> 
+							}
+						}); break;
+				case "double": getters.add(new FieldGetter(Double.class, name)
+						{
+							List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException 
 							{
 								DenseDoubleVector data = new DenseDoubleVector(1);
 								data.add(field.getDouble(o));
 								List<Entry> entries = new ArrayList<>();
 								entries.add(new VectorEntry(index, 0, 1, 0, data));
 								return entries;
-							}, Double.class);
-				case "float": return new ArrayImpl((o, index) -> 
+							}
+						}); break;
+				case "float":  getters.add(new FieldGetter(Double.class, name)
+						{
+							List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException 
 							{
 								DenseDoubleVector data = new DenseDoubleVector(1);
 								data.add(field.getFloat(o));
 								List<Entry> entries = new ArrayList<>();
 								entries.add(new VectorEntry(index, 0, 1, 0, data));
 								return entries;
-							}, Double.class);
-				case "java.lang.String": return new ArrayImpl((o, index) -> 
-							{
-								DenseStringVector data = new DenseStringVector(1);
-								String value = (String) field.get(o);
-								if (value == null) return new ArrayList<>();
-								data.add(value);
-								List<Entry> entries = new ArrayList<>();
-								entries.add(new VectorEntry(index, 0, 1, 0, data));
-								return entries;
-							}, String.class);
-				case "java.util.List<java.lang.String>": return new ArrayImpl((o, index) -> 
-							{
-								List<String> values = (List<String>) field.get(o);
-								if (values == null) return new ArrayList<>();
-								DenseStringVector data = new DenseStringVector(values.size());
-								for (String v : values) data.add(v);
-								List<Entry> entries = new ArrayList<>(values.size());
-								for (int i=0; i<values.size(); i++)
-								{
-									entries.add(new VectorEntry(index, i, 1, i, data));
-								}
-								return entries;
-							}, String.class);
-				case "java.util.List<java.lang.Double>": return new ArrayImpl((o, index) -> 
-							{
-								List<Double> values = (List<Double>) field.get(o);
-								if (values == null) return new ArrayList<>();
-								DenseDoubleVector data = new DenseDoubleVector(values.size());
-								for (double v : values) data.add(v);
-								List<Entry> entries = new ArrayList<>(values.size());
-								for (int i=0; i<values.size(); i++)
-								{
-									entries.add(new VectorEntry(index, i, 1, i, data));
-								}
-								return entries;
-							}, Double.class);
-				case "double[]": return new ArrayImpl((o, index) -> 
-						{
-							double[] values = (double[]) field.get(o);
-							if (values == null) return new ArrayList<Entry>();
-							DenseDoubleVector data = new DenseDoubleVector(values.length);
-							for (double v : values) data.add(v);
-							List<Entry> entries = new ArrayList<>(values.length);
-							for (int i=0; i<values.length; i++)
-							{
-								entries.add(new VectorEntry(index, i, 1, i, data));
 							}
-							return entries;
-						}, Double.class);
-				case "long[]": return new ArrayImpl((o, index) -> 
+						}); break;
+				case "java.lang.String": getters.add(new FieldGetter(String.class, name)
 				{
-					long[] values = (long[]) field.get(o);
-					if (values == null) return new ArrayList<Entry>();
-					DenseLongVector data = new DenseLongVector(values.length);
-					for (long v : values) data.add(v);
-					List<Entry> entries = new ArrayList<>(values.length);
-					for (int i=0; i<values.length; i++)
+					List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException 
 					{
-						entries.add(new VectorEntry(index, i, 1, i, data));
+						DenseStringVector data = new DenseStringVector(1);
+						String value = (String) field.get(o);
+						if (value == null) return new ArrayList<>();
+						data.add(value);
+						List<Entry> entries = new ArrayList<>();
+						entries.add(new VectorEntry(index, 0, 1, 0, data));
+						return entries;
 					}
-					return entries;
-				}, Double.class);
-				case "java.lang.String[]": return new ArrayImpl((o, index) -> 
+				}); break; 
+				case "java.util.List<java.lang.String>": getters.add(new FieldGetter(String.class, name)
+				{
+					List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException 
+					{
+						List<String> values = (List<String>) field.get(o);
+						if (values == null) return new ArrayList<>();
+						DenseStringVector data = new DenseStringVector(values.size());
+						for (String v : values) data.add(v);
+						List<Entry> entries = new ArrayList<>(values.size());
+						for (int i=0; i<values.size(); i++)
 						{
-							String[] values = (String[]) field.get(o);
-							if (values == null) return new ArrayList<>();
-							DenseStringVector data = new DenseStringVector(values.length);
-							for (String v : values) data.add(v);
-							List<Entry> entries = new ArrayList<>(values.length);
-							for (int i=0; i<values.length; i++)
-							{
-								entries.add(new VectorEntry(index, i, 1, i, data));
-							}
-							return entries;
-						}, String.class);
-				default: System.out.println("Not supported field type: " + field.getGenericType().getTypeName() + " for " + field.getName());
+							entries.add(new VectorEntry(index, i, 1, i, data));
+						}
+						return entries;
+					}
+				}); break; 
+				case "java.util.List<java.lang.Double>": getters.add(new FieldGetter(Double.class, name)
+				{
+					List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException 
+					{
+						List<Double> values = (List<Double>) field.get(o);
+						if (values == null) return new ArrayList<>();
+						DenseDoubleVector data = new DenseDoubleVector(values.size());
+						for (double v : values) data.add(v);
+						List<Entry> entries = new ArrayList<>(values.size());
+						for (int i=0; i<values.size(); i++)
+						{
+							entries.add(new VectorEntry(index, i, 1, i, data));
+						}
+						return entries;
+					}
+				}); break; 
+				case "double[]": getters.add(new FieldGetter(Double.class, name)
+				{
+					List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException 
+					{
+						double[] values = (double[]) field.get(o);
+						if (values == null) return new ArrayList<Entry>();
+						DenseDoubleVector data = new DenseDoubleVector(values.length);
+						for (double v : values) data.add(v);
+						List<Entry> entries = new ArrayList<>(values.length);
+						for (int i=0; i<values.length; i++)
+						{
+							entries.add(new VectorEntry(index, i, 1, i, data));
+						}
+						return entries;
+					}
+				}); break;
+				case "long[]": getters.add(new FieldGetter(Double.class, name)
+				{
+					List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException 
+					{
+						long[] values = (long[]) field.get(o);
+						if (values == null) return new ArrayList<Entry>();
+						DenseLongVector data = new DenseLongVector(values.length);
+						for (long v : values) data.add(v);
+						List<Entry> entries = new ArrayList<>(values.length);
+						for (int i=0; i<values.length; i++)
+						{
+							entries.add(new VectorEntry(index, i, 1, i, data));
+						}
+						return entries;
+					}
+				}); break;
+				case "java.lang.String[]": getters.add(new FieldGetter(String.class, name)
+				{
+					List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException 
+					{
+						String[] values = (String[]) field.get(o);
+						if (values == null) return new ArrayList<>();
+						DenseStringVector data = new DenseStringVector(values.length);
+						for (String v : values) data.add(v);
+						List<Entry> entries = new ArrayList<>(values.length);
+						for (int i=0; i<values.length; i++)
+						{
+							entries.add(new VectorEntry(index, i, 1, i, data));
+						}
+						return entries;
+					}
+				}); break;
+				default: 
+					List<FieldGetter> childGetters = new ArrayList<>();
+					for (Field f : field.getType().getFields())
+					{
+						for (FieldGetter fg : getArray(f))
+						{
+							childGetters.add(new FieldGetterParent(field, name, fg));
+						}
+					}
+					if (childGetters.isEmpty()) System.out.println("Not supported field type: " + field.getGenericType().getTypeName() + " for " + field.getName());
+					getters.addAll(childGetters);
 				}
 				
-				return null;
+				return getters;
 			}
 		}
 		FieldAnalzyer fieldAnalzyer = new FieldAnalzyer();
@@ -391,14 +434,15 @@ public class KoralIO
 		for (Field field : clazz.getFields()) //.getDeclaredFields())
 		{
 			if (field.getName().equals("index") && field.getGenericType().getTypeName().equals("long")) continue; // ignore index field
-			if (Modifier.isTransient(field.getModifiers())) continue;
-			ArrayImpl array = fieldAnalzyer.getArray(field);
-			if (array == null) continue;
-			field.setAccessible(true);
-			array.qid = new QID(baseID, field.getName());
-			arrays.add(array);
+			List<FieldGetter> fieldGetters = fieldAnalzyer.getArray(field);
+			
+			for (FieldGetter fg : fieldGetters)
+			{
+				ArrayImpl array = new ArrayImpl(fg);
+				array.qid = new QID(baseID, fg.name());
+				arrays.add(array);
+			}
 		}
-		
 		
 		class DataIter implements Runnable
 		{
@@ -747,7 +791,45 @@ public class KoralIO
 	}
 }
 
-interface FieldGetter
+
+abstract class FieldGetter
 {
-	List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException;
+	Class<?> type;
+	String name;
+	
+	public FieldGetter(Class<?> type, String name)
+	{
+		this.type = type;
+		this.name = name;
+	}
+	
+	abstract List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException;
+	
+	Class<?> type()
+	{
+		return type;
+	}
+	
+	String name()
+	{
+		return name;
+	}
+}
+
+class FieldGetterParent extends FieldGetter
+{
+	FieldGetter child;
+	Field field;
+	
+	public FieldGetterParent(Field field, String name, FieldGetter child)
+	{
+		super(child.type(), name + "." + child.name);
+		this.child = child;
+		this.field = field;
+	}
+
+	List<Entry> get(Object o, long index) throws IllegalArgumentException, IllegalAccessException 
+	{
+		return child.get(field.get(o), index);
+	}
 }
