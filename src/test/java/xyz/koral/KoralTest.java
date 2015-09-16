@@ -3,6 +3,7 @@ package xyz.koral;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -10,6 +11,7 @@ import java.io.StringWriter;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -18,16 +20,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import xyz.koral.Array;
-import xyz.koral.Entry;
-import xyz.koral.InMemorySparseArray;
-import xyz.koral.Koral;
-import xyz.koral.Query.Occur;
-import xyz.koral.internal.ArrayStreamWriter;
-import xyz.koral.internal.XmlDocument;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import xyz.koral.Query.Occur;
+import xyz.koral.internal.ArrayStreamWriter;
+import xyz.koral.internal.KoralImpl;
+import xyz.koral.internal.XmlDocument;
 
 public class KoralTest extends TestCase
 {
@@ -49,13 +48,39 @@ public class KoralTest extends TestCase
     	InMemorySparseArray b = new InMemorySparseArray("na", "b", Double.class);
     	b.add(28.0, 24.0);
     	
-    	Koral k = new Koral(a, b);
+    	Koral k = Koral.instance(a, b);
     	ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    	KoralIO.save(k, bos);
+    	KoralIO.instance().save(k, bos);
     	bos.flush();
     	String s = new String(bos.toByteArray(), XmlDocument.cs);
     	System.out.println(s);
     }
+    
+//    public void test_IdxFileNotClosed() throws IOException
+//    {
+//    	File dir = new File("C:/data");
+//    	File file = new File(dir, "test.xml");
+//    	File indexFile = new File(dir, ".index/test.idx.xml");
+//    	Path p = Paths.get(indexFile.toURI());
+//    	
+//    	if (!file.exists())
+//    	{
+//    		System.out.println("Creating file.");
+//    		WritableArray a = new InMemorySparseArray(new QID("test.abc"), Double.class, 1, 1);
+//    		a.add(1.0, 2.0, 3.0);
+//    		KoralIO.instance().save(Koral.instance(a), new FileOutputStream(file));
+//    		
+//    		KoralIO.instance().load(file);
+//    	}
+//    	else
+//    	{
+//    		System.out.println("Loading file");
+//    		Koral k = KoralIO.instance().load(file);
+//    		
+//    		System.out.println("Deleting " + p);
+//    		deleteTemp(p);
+//    	}
+//    }
     
     public void test1() throws Exception
     {
@@ -68,7 +93,7 @@ public class KoralTest extends TestCase
         	  + "<array id=\"b\" type=\"numeric\" count=\"4\">1000.0|2000.0|3|4.5</array>\n"
         	  + "<array id=\"c\" type=\"string\" count=\"3\">heinz|hinz\n|kunz</array>\n" + endTag);
         	
-        	Koral k = KoralIO.load(file);
+        	Koral k = KoralIO.instance().load(file);
   
         	Array a = k.asArray("na.a");
         	
@@ -87,7 +112,7 @@ public class KoralTest extends TestCase
         	assertEquals("kunz", c.get(2).getS());
         	
         	ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        	KoralIO.save(k, bos);
+        	KoralIO.instance().save(k, bos);
         	String s = new String(bos.toByteArray(), XmlDocument.cs);
         	System.out.println(s);
     	}
@@ -123,7 +148,7 @@ public class KoralTest extends TestCase
         		"<array id=\"a\" type=\"numeric\" count=\"" + test.length + "\">" + sb.toString() + "</array>\n"
         	  + endTag);
         	
-        	Koral k = KoralIO.load(file);
+        	Koral k = KoralIO.instance().load(file);
   
         	Array a = k.asArray("na.a");
         	
@@ -160,7 +185,7 @@ public class KoralTest extends TestCase
         		"<array id=\"a\" type=\"numeric\" maxPitch=\"" + testData.rows + "\" count=\"" + testData.cols + "\">" + content + "</array>\n"
         	  + endTag);
         	
-        	Koral k = KoralIO.load(file);
+        	Koral k = KoralIO.instance().load(file);
   
         	Array a = k.asArray("na.a");
         	
@@ -235,7 +260,7 @@ public class KoralTest extends TestCase
     	InMemorySparseArray e = new InMemorySparseArray("n", "e", String.class, 2, 2);
     	e.add("a.1", "a.2", "b.1", "b.2", "2a.1", "2a.2");
     	
-    	Koral k = new Koral(a, b, c, d, e);
+    	Koral k = Koral.instance(a, b, c, d, e);
     	k.asTable("n", TestR.class, "a", "b", "c", "d", "e").forEach(t -> System.out.println(t));
     }
     
@@ -259,7 +284,7 @@ public class KoralTest extends TestCase
     	InMemorySparseArray e = new InMemorySparseArray("n", "e", String.class, 2, 2);
     	e.add("a.1", "a.2", "b.1", "b.2", "2a.1", "2a.2");
     	
-    	Koral k = new Koral(a, b, c, d, e);
+    	Koral k = Koral.instance(a, b, c, d, e);
     	List<String> ids = new ArrayList<String>();
     	ids.add("a");
     	ids.add("b");
@@ -288,55 +313,55 @@ public class KoralTest extends TestCase
     {
     	assertEquals(
     			new long[] {1}, 
-    			Koral.logicalCombination(
+    			KoralImpl.logicalCombination(
     			new long[] {1}, 
     			new long[] {1}, Occur.MUST));
     	
     	assertEquals(
     			new long[] {}, 
-    			Koral.logicalCombination(
+    			KoralImpl.logicalCombination(
     			new long[] {}, 
     			new long[] {}, Occur.MUST));
     	
     	assertEquals(
     			new long[] {}, 
-    			Koral.logicalCombination(
+    			KoralImpl.logicalCombination(
     			new long[] {}, 
     			new long[] {1, 2, 3}, Occur.MUST));
 
     	assertEquals(
     			new long[] {3, 8, 17, 24, 25}, 
-    			Koral.logicalCombination(
+    			KoralImpl.logicalCombination(
     			new long[] {3, 8, 17, 24, 25}, 
     			new long[] {3, 8, 17, 24, 25}, Occur.MUST));
     	
     	assertEquals(
     			new long[] {1, 4}, 
-    			Koral.logicalCombination(
+    			KoralImpl.logicalCombination(
     			new long[] {1, 3, 4, 18, 21}, 
     			new long[] {1, 4, 5, 19, 20, 24, 25}, Occur.MUST));
     	
     	assertEquals(
     			new long[] {223}, 
-    			Koral.logicalCombination(
+    			KoralImpl.logicalCombination(
     			new long[] {223}, 
     			new long[] {1, 4, 5, 19, 20, 24, 25, 223, 224}, Occur.MUST));
     	
     	assertEquals(
     			new long[] {1, 2}, 
-    			Koral.logicalCombination(
+    			KoralImpl.logicalCombination(
     			new long[] {1}, 
     			new long[] {2}, Occur.SHOULD));
     	
     	assertEquals(
     			new long[] {1, 2, 8, 22, 2000, 4000, 4001, 4002}, 
-    			Koral.logicalCombination(
+    			KoralImpl.logicalCombination(
     			new long[] {1, 8, 22, 2000, 4000}, 
     			new long[] {2, 8, 22, 2000, 4001, 4002}, Occur.SHOULD));
     	
     	assertEquals(
     			new long[] {1, 4000}, 
-    			Koral.logicalCombination(
+    			KoralImpl.logicalCombination(
     			new long[] {1, 8, 22, 2000, 4000}, 
     			new long[] {2, 8, 22, 2000, 4001, 4002}, Occur.NOT));
     }
@@ -362,10 +387,10 @@ public class KoralTest extends TestCase
     	InMemorySparseArray c = new InMemorySparseArray("n", "c", String.class);
     	c.add("a", "b", "c", "d", "e");
     	
-    	Koral k = new Koral(a, b, c);
+    	Koral k = Koral.instance(a, b, c);
     	
     	List<List<List<Entry>>> result = new ArrayList<>();
-    	k.asTable(k.arrays).forEach(arrays -> 
+    	k.asTable(k.arrays()).forEach(arrays -> 
     	{
     		result.add(arrays);
     	});
@@ -389,10 +414,10 @@ public class KoralTest extends TestCase
         	File file = new File(path.toString(), "testkoral.xml");
         	System.out.println(file.getAbsolutePath());
         	
-        	KoralIO.save(new Koral(a), new FileOutputStream(file));
+        	KoralIO.instance().save(Koral.instance(a), new FileOutputStream(file));
         	
-        	Koral k = KoralIO.load(file);
-        	Array result = k.arrays.get(0);
+        	Koral k = KoralIO.instance().load(file);
+        	Array result = k.arrays().get(0);
         	assertEquals(a.size(), result.size());
     	}
     	finally
@@ -401,45 +426,4 @@ public class KoralTest extends TestCase
     	}
     	
     }
-}
-
-class TestR
-{
-	public long index;
-	public double a = Double.NaN;
-	public double b = Double.NaN;
-	public List<String> c;
-	public double[] d;
-	public List<List<String>> e;
-	
-	public String toString() 
-	{
-		StringBuilder sb = new StringBuilder();
-		if (c != null)
-		{
-			for (String s : c) sb.append(" " + s);
-		}
-		String cStr = sb.toString().trim();
-		
-		sb = new StringBuilder();
-		if (e != null)
-		{
-			for (int i=0; i<e.size(); i++)
-			{
-				sb.append("(");
-				
-				List<String> es = e.get(i);
-				for (int j=0; j<es.size(); j++)
-				{
-					sb.append(es.get(j));
-					if (j < es.size() - 1) sb.append(" ");
-				}
-				
-				sb.append(") ");
-			}
-		}
-		String eStr = sb.toString().trim();
-		
-		return index + " a=" + a + " b=" + b + " c=" + cStr + " d=" + (d != null ? Arrays.toString(d) : "") + " e=" + eStr;
-	}
 }

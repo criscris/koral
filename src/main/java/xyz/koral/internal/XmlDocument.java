@@ -269,8 +269,9 @@ public class XmlDocument
 			StreamResult result = new StreamResult(os);
 			DOMSource source = new DOMSource(doc);
 			transformer.transform(source, result);
+			os.close(); // added for Windows OS
 		}
-		catch (TransformerException ex)
+		catch (TransformerException | IOException ex)
 		{
 			throw new KoralError(ex);
 		}

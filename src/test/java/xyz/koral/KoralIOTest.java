@@ -5,7 +5,6 @@ import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import junit.framework.Test;
@@ -72,10 +71,10 @@ public class KoralIOTest extends TestCase
     	{
         	File file = new File(path.toString(), "testkoral.xml");
         	long time = System.currentTimeMillis();
-        	KoralIO.save(data, TestObject.class, qid, new FileOutputStream(file));
+        	KoralIO.instance().save(data, TestObject.class, qid, new FileOutputStream(file));
         	System.out.println((System.currentTimeMillis() - time) + " ms overall saving time.");
         	
-        	Koral k = KoralIO.load(false, file);
+        	Koral k = KoralIO.instance().load(false, file);
         	k.asTable(qid, TestObject.class, k.arrayIDs(qid)).forEach(t ->
         	{
         		TestObject reference = data.get((int) (t.index));

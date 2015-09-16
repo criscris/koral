@@ -15,19 +15,19 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+
 import xyz.koral.Array;
 import xyz.koral.Entry;
 import xyz.koral.Koral;
 import xyz.koral.KoralIO;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-
 public class KoralServices 
 {
 	private final static Logger L = Logger.getLogger(KoralServices.class.getName()); 
 	
-	Koral k = new Koral();
+	Koral k = new KoralImpl();
 	
 	static final String fileUri = "/file";
 	class FileLoader implements HttpHandler
@@ -38,7 +38,7 @@ public class KoralServices
 			{
 				String uri = t.getRequestURI().getPath().substring(fileUri.length());
 				File file = new File(uri);
-				Koral kk = KoralIO.load(file);
+				Koral kk = KoralIO.instance().load(file);
 				k.add(kk);
 				
 				File indexFile = new Index(file).getIndexFile();

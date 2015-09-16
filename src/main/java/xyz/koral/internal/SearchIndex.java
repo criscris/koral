@@ -285,7 +285,7 @@ public class SearchIndex
 
 			}
 			List<Array> as = new ArrayList<>(arrays);
-			Koral k = new Koral(as);
+			Koral k = new KoralImpl(as);
 			
 			DocCreator dc = new DocCreator();
 			for (Array a : arrays) dc.maxCount = Math.max(dc.maxCount, a.size());
