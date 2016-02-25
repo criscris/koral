@@ -19,6 +19,7 @@ public interface KoralIO
 	void save(Koral koral, OutputStream os);
 	void save(List<Array> arrays, OutputStream os);
 	void save(List<Array> arrays, long[] indices, OutputStream os);
+	void saveAsCsv(Koral koral, OutputStream os);
 }
 
 

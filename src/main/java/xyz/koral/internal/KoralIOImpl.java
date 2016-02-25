@@ -779,6 +779,60 @@ public class KoralIOImpl implements KoralIO
 			throw new KoralError(ex);
 		}
 	}
+	
+	static String decomma(String text)
+	{
+		return text.contains(",") ? "\"" + text + "\"" : text;
+	}
+	
+	public void saveAsCsv(Koral koral, OutputStream os)
+	{
+		List<Array> arrays = koral.arrays();
+		try
+		{
+			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+			for (int i=0; i<arrays.size(); i++)
+			{
+				Array a = arrays.get(i);
+				writer.write(decomma(a.qid().getID()));
+				if (i < arrays.size() - 1) writer.write(",");
+			}
+			writer.write("\n");
+			
+			koral.asTable(arrays).forEach(list -> 
+			{
+				try 
+				{
+					for (int j=0; j<list.size(); j++)
+					{
+						List<Entry> col = list.get(j);
+						if (col != null)
+						{
+							StringBuilder sb = new StringBuilder();
+							for (int i=0; i<col.size(); i++)
+							{
+								sb.append(col.get(i).getS());
+								if (i < col.size() - 1) sb.append("|");
+							}
+							writer.write(decomma(sb.toString()));
+						}
+						if (j < list.size() - 1) writer.write(",");
+					}
+					writer.write("\n");
+				} 
+				catch (IOException ex) 
+				{
+					throw new KoralError(ex);
+				}
+			});
+			
+			writer.close();
+		}
+		catch (IOException ex)
+		{
+			throw new KoralError(ex);
+		}
+	}
 }
 
 abstract class FieldGetter
