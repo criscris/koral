@@ -2,8 +2,8 @@ function loadScripts()
 {
 	document.writeln("<script async src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML'></script>");
 	document.writeln("<script async src='https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js'></script>");
-	document.writeln("<script async src='http://koral-xyz.github.io/lib/BibTex.min.js'></script>");
-	document.writeln("<script async src='http://koral-xyz.github.io/lib/papaparse.min.js'></script>");
+	document.writeln("<script async src='https://koral-xyz.github.io/lib/BibTex.min.js'></script>");
+	document.writeln("<script async src='https://koral-xyz.github.io/lib/papaparse.min.js'></script>");
 	document.writeln("<script async src='https://d3js.org/d3.v3.min.js'></script>");
 }
 
