@@ -249,7 +249,7 @@ function loadPlots()
 			var index = 0;
 			children.each(function (i, v) 
 			{
-				$(this).wrap("<div style='float:left'></div>");
+				$(this).wrap(index == 0 ? "<div style='float:left'></div>" : "<div></div>");
 				$(this).parent().append("<p style='margin-left: 3rem'>(" + String.fromCharCode(firstLetter + index) + ")</p>");
 				index++;
 			});
