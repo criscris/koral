@@ -158,8 +158,14 @@ figure figcaption:before {
 	stroke-width:1px;
 }
 
+.colorLegendBox {
+	fill:rgba(255,255,255,0.8);
+	stroke:rgb(0, 0, 0);
+	stroke-width:1px;
+}
+
 .legendText {
-	font-size: 13px;
+	font-size: 12px;
 }
 
 

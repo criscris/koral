@@ -1,10 +1,18 @@
 function loadScripts() 
 {
+	document.writeln("<link rel='icon' href='data:;base64,iVBORw0KGgo='/>");
+
 	document.writeln("<script async src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML'></script>");
 	document.writeln("<script async src='https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js'></script>");
-	document.writeln("<script async src='https://koral-xyz.github.io/lib/BibTex.min.js'></script>");
+	document.writeln("<script async src='https://koral-xyz.github.io/lib/BibTex.min.js'></script>"); 
 	document.writeln("<script async src='https://koral-xyz.github.io/lib/papaparse.min.js'></script>");
 	document.writeln("<script async src='https://d3js.org/d3.v3.min.js'></script>");
+
+	// document.writeln("<script async src='../lib/mathjax/MathJax.js?config=TeX-MML-AM_CHTML'></script>");
+	// document.writeln("<script async src='../lib/jquery-2.2.4.min.js'></script>");
+	// document.writeln("<script async src='../lib/BibTex.min.js'></script>"); 
+	// document.writeln("<script async src='../lib/papaparse.min.js'></script>");
+	// document.writeln("<script async src='../lib/d3.min.js'></script>");
 }
 
 function init() 
@@ -136,6 +144,18 @@ function loadReferences()
 	});
 }
 
+var Koral = {
+
+    xy: function(xmin, xmax, xby, yFunc) {
+    	r = [];
+		for (var x=xmin; x<=xmax; x+=xby)
+		{
+			r.push({x:x, y:yFunc(x)});
+		}
+		return r;
+    }
+};
+
 function loadPlots()
 {
 	function logTicks(min, max)
@@ -158,8 +178,8 @@ function loadPlots()
 			return [val/Math.pow(10, pow10), pow10]; 
 		}
 
-		var minp = p(min);
-		var maxp = p(max);
+		var minp = p(min); minp[0] = Math.ceil(minp[0]);
+		var maxp = p(max); maxp[0] = Math.floor(maxp[0]);
 
 		var currentScale = minp[0];
 		var current10 = minp[1];
@@ -224,19 +244,24 @@ function loadPlots()
 		tickHalfLengthSmall: 2,
 		plotMargin: 12,
 
-		legend: true
+		legend: undefined
 	};
 
 	var plotDrawDefaults = {
+		rows: undefined, // row selector
 		xData: 0,
 		yData: 1,
 		zData: 2,
-		type: "points", // line, errorBars
+		type: "points", // line, errorBars, area
 		size: 2.0,
 		color: "rgb(0, 0, 255)",
 		errorBarThickness: 1.0,
 		errorCrossBarWidth: 5.0,
-		label: undefined // for legend
+		label: undefined, // { vert:0, horiz:0 }
+		shape: "circle", // for points. choices: circle, rect
+		realSize: undefined, // [1,1] width and height in data space
+		colorMapper: undefined, // [0, 100], ["rgb(0,0,255)", "rgb(255,0,0)"]
+		colorLegend: undefined, // { "label":"citations, "vert":0, "horiz":1 }
 	}
 
 	// step 0: arrange figures
@@ -249,12 +274,28 @@ function loadPlots()
 			var index = 0;
 			children.each(function (i, v) 
 			{
-				$(this).wrap(index == 0 ? "<div style='float:left'></div>" : "<div></div>");
+				$(this).wrap("<div style='float:left'></div>");
 				$(this).parent().append("<p style='margin-left: 3rem'>(" + String.fromCharCode(firstLetter + index) + ")</p>");
 				index++;
 			});
+			$(this).children("figcaption").css("clear", "left");
 		}
 	});
+
+	// step 0b: urls
+	$("article").each(function (index, value) 
+	{
+		var prefix = $(this).data("urlprefix");
+		if (prefix != null && prefix.length > 0)
+		{
+			$(this).find("[data-url]").each(function (i, v) 
+			{
+				$(this).data("url", prefix + $(this).data("url"));
+			});	
+		}
+	});
+
+	$( "li" ).first()
 
 	// step 1: load all csv data
 	var urls = {};
@@ -262,6 +303,19 @@ function loadPlots()
 	{
 		var url = $(this).data("url");
 		urls[url] = true;
+	});
+	$("svg > [data-generator]").each(function (index, value) 
+	{
+		var code = $(this).data("generator");
+		var data = eval(code);
+		
+		var url = $(this).data("url");
+		if (url == null)
+		{
+			url = uuid();
+			$(this).attr("data-url", url);
+		}
+		urls[url] = data;
 	});
 	$("svg > [data-source]").each(function (index, value) 
 	{
@@ -316,7 +370,8 @@ function loadPlots()
 			{
 	 			var url = $(this).data("url");
 				var drawOptions = $(this).data("config");
-				var drawConf = $.extend({}, plotDrawDefaults, options == null ? {} : options);
+				var drawConf = $.extend({}, plotDrawDefaults, drawOptions == null ? {} : drawOptions);
+
 				var data = urls[url];
 				var colNames = Object.getOwnPropertyNames(data[0]);
 
@@ -388,7 +443,10 @@ function loadPlots()
 			var svg = d3.select($(this).get(0));
 			svg.attr("width", width).attr("height", height).attr("viewBox", (-conf.left) + " " + (-conf.top) + " " + width + " " + height);
 
+			var defs = svg.insert("defs", ":first-child");
+
 			// debug
+			//svg.append("rect").attr("style", "fill:none;stroke:#000000;stroke-width:1px;").attr("stroke-dasharray", "5,5").attr("x", 0).attr("y", 0).attr("width", conf.plotWidth).attr("height", conf.plotHeight);
 			//svg.append("rect").attr("style", "fill:none;stroke:#000000;stroke-width:1px;").attr("stroke-dasharray", "5,5").attr("x", -conf.left).attr("y", -conf.top).attr("width", width).attr("height", height);
 			//svg.append("rect").attr("style", "fill:none;stroke:#000000;stroke-width:1px;").attr("stroke-dasharray", "5,5").attr("x", -conf.left + 12).attr("y", -conf.top + 12).attr("width", width - 24).attr("height", height - 24);
 
@@ -441,29 +499,77 @@ function loadPlots()
 				var drawOptions = $(this).data("config");
 				var drawConf = $.extend({}, plotDrawDefaults, drawOptions == null ? {} : drawOptions);
 				var data = urls[url];
-
 				var colNames = Object.getOwnPropertyNames(data[0]);
-
-
+				if (drawConf.rows != null)
+				{
+					var d = []
+					var col = colNames[drawConf.rows.column];
+					for (var i=0; i<data.length; i++)
+					{
+						var e = data[i];
+						if (e[col] === drawConf.rows.equals) 
+						{
+							d.push(e);
+						}
+					}
+					data = d;
+				}
 				
 				var g = d3.select($(this).get(0));
 				g.attr("fill", drawConf.color);
 
 				if (drawConf.type === "points")
 				{
+					var cinterp = drawConf.colorMapper != null ? d3.scale.linear().domain(drawConf.colorMapper.in).interpolate(d3.interpolateRgb).range(drawConf.colorMapper.out) : null;
+
 					for (var i=0; i<data.length; i++)
 					{
 						var e = data[i];
-						var x = e[colNames[drawConf.xData]];
-						var y = e[colNames[drawConf.yData]];
+						var x = Number(e[colNames[drawConf.xData]]);
+						var y = Number(e[colNames[drawConf.yData]]);
+						var z = Number(e[colNames[drawConf.zData]]);
 						var normx = conf.xTransform(x);
 						var normy = conf.yTransform(y);
 						if (normx < 0 || normx > 1 || normy < 0 || normy > 1) continue;
 
-						var screenx = normx * conf.plotWidth;
-						var screeny = (1.0 - normy) * conf.plotHeight;
+						var t = null;
+						if (drawConf.realSize == null)
+						{
+							var screenx = normx * conf.plotWidth;
+							var screeny = (1.0 - normy) * conf.plotHeight;
 
-						g.append("circle").attr("r", drawConf.size).attr("cx", screenx).attr("cy", screeny);
+							if (drawConf.shape === "circle")
+							{
+								t = g.append("circle").attr("r", drawConf.size).attr("cx", screenx).attr("cy", screeny);
+	
+							}
+							else if (drawConf.shape === "rect")
+							{
+								t = g.append("rect").attr("width", drawConf.size).attr("height", drawConf.size).attr("x", screenx - drawConf.size/2.0 ).attr("y", screeny - drawConf.size/2.0);
+							}
+						}
+						else
+						{
+							var x0 = x - drawConf.realSize[0]/2.0;
+							var x1 = x + drawConf.realSize[0]/2.0;
+							var y0 = y - drawConf.realSize[1]/2.0;
+							var y1 = y + drawConf.realSize[1]/2.0;
+							var normx0 = conf.xTransform(x0);
+							var normx1 = conf.xTransform(x1);
+							var normy0 = conf.yTransform(y0);
+							var normy1 = conf.yTransform(y1);
+							var screenx0 = normx0 * conf.plotWidth;
+							var screenx1 = normx1 * conf.plotWidth;
+							var screeny0 = (1.0 - normy0) * conf.plotHeight;
+							var screeny1 = (1.0 - normy1) * conf.plotHeight;
+
+							if (drawConf.shape === "rect")
+							{
+								t = g.append("rect").attr("width", screenx1-screenx0).attr("height", screeny0-screeny1).attr("x", screenx0).attr("y", screeny1);
+							}
+						}
+
+						if (t != null && cinterp != null) t.attr("fill", cinterp(z));
 					}
 				}
 				else if (drawConf.type === "line")
@@ -527,6 +633,66 @@ function loadPlots()
 						}
 					}
 				}
+				else if (drawConf.type == "area")
+				{
+					var sb = [];
+					var index = 0;
+					for (var i=0; i<data.length*2; i++)
+					{
+						var j = i >= data.length ? data.length - 1 - (i - data.length) : i;
+
+						var e = data[j];
+						var x = Number(e[colNames[drawConf.xData]]);
+						var y = i >= data.length ? Number(e[colNames[drawConf.zData]]) : Number(e[colNames[drawConf.yData]]);
+						if (!isFinite(x) || !isFinite(y)) continue;
+						var normx = conf.xTransform(x);
+						var normy = conf.yTransform(y);
+						var screenx = normx * conf.plotWidth;
+						var screeny = (1.0 - normy) * conf.plotHeight;
+							
+						sb.push(index == 0 ? "M" : " L");
+						sb.push(screenx + " " + screeny);
+
+						index++;
+					}
+					sb.push(" Z");
+					g.append("path").attr("d", sb.join("")).attr("style", "fill:"  + drawConf.color + "; stroke:none");
+				}
+
+				if (drawConf.colorLegend && drawConf.colorMapper)
+				{
+					var g = svg.append("g");
+					var bb = g.append("rect");
+					var gl = g.append("g"); 
+
+					var lineHeight = 18;
+					gl.append("text").text(drawConf.colorLegend.label).classed("plotText legendText", true).attr("x", 5).attr("y", 16);
+					
+					var cmid = "cm_" + uuid();
+					var lg = defs.append("linearGradient").attr("id", cmid).attr("y1", "100%").attr("x2", "0%").attr("y2", "0%");
+					var inp = drawConf.colorMapper.in;
+					var maxIn = inp[inp.length - 1];
+					var minIn = inp[0];
+					for (var i=0; i<inp.length; i++)
+					{
+						var o = (inp[i] - minIn) / (maxIn - minIn) * 100;
+						lg.append("stop").attr("stop-color", drawConf.colorMapper.out[i]).attr("offset", o + "%");
+					}
+					gl.append("rect").attr("x", 5).attr("y", 30).attr("width", 10).attr("height", 2*lineHeight)
+					.attr("fill", "url(#" + cmid + ")");
+					
+					gl.append("text").text("" + maxIn).classed("plotText legendText", true).attr("x", 20).attr("y", 16 + lineHeight);
+					gl.append("text").text("" + minIn).classed("plotText legendText", true).attr("x", 20).attr("y", 16 + 3*lineHeight);
+
+					var b = gl.node().getBBox();
+					var w = b.width + b.x + 5;
+					var h = b.height + b.y + 5;
+					bb.attr("x", 0).attr("y", 0).attr("width", w).attr("height", h).classed("colorLegendBox", true);
+
+					var x = (conf.plotWidth - w)*drawConf.colorLegend.horiz;
+					var y = (conf.plotHeight - h)*drawConf.colorLegend.vert;
+					g.attr("transform", "translate(" + x + "," + y + ")");
+				}
 			});
 
 			if (conf.legend)
@@ -541,19 +707,21 @@ function loadPlots()
 		 			var url = $(this).data("url");
 					var drawOptions = $(this).data("config");
 					var drawConf = $.extend({}, plotDrawDefaults, drawOptions == null ? {} : drawOptions);
+					
+					var lineHeight = 18;
 
 					if (drawConf.label != null && (drawConf.type === "points" || drawConf.type === "line"))
 					{
-						gl.append("text").text(drawConf.label).classed("plotText legendText", true).attr("x", 32).attr("y", 24*legendIndex + 19);
+						gl.append("text").text(drawConf.label).classed("plotText legendText", true).attr("x", 24).attr("y", lineHeight*legendIndex + 16);
 
-						var y = 24*legendIndex + 13;
+						var y = lineHeight*legendIndex + 11;
 						if (drawConf.type === "points")
 						{
-							gl.append("circle").attr("fill", drawConf.color).attr("r", drawConf.size).attr("cx", 15).attr("cy", y);
+							gl.append("circle").attr("fill", drawConf.color).attr("r", drawConf.size).attr("cx", 12).attr("cy", y);
 						}
 						else if (drawConf.type === "line")
 						{
-							gl.append("path").attr("d", "M5 " + y + " L25 " + y).attr("style", "fill:none; stroke:" + drawConf.color + "; stroke-width:" + drawConf.size + "px");
+							gl.append("path").attr("d", "M5 " + y + " L19 " + y).attr("style", "fill:none; stroke:" + drawConf.color + "; stroke-width:" + drawConf.size + "px");
 						}
 
 						legendIndex++;
@@ -563,9 +731,13 @@ function loadPlots()
 				if (legendIndex > 0)
 				{
 					var b = gl.node().getBBox();
-					bb.attr("x", (b.x-5)).attr("y", (b.y - 5)).attr("width", (b.width + 10)).attr("height", (b.height + 10)).classed("legendBox", true);
+					var w = b.width + b.x + 5;
+					var h = b.height + b.y + 5;
+					bb.attr("x", 0).attr("y", 0).attr("width", w).attr("height", h).classed("legendBox", true);
 
-					g.attr("transform", "translate(" + (conf.plotWidth - (b.width + 10)) + ",0)");
+					var x = (conf.plotWidth - w)*conf.legend.horiz;
+					var y = (conf.plotHeight - h)*conf.legend.vert;
+					g.attr("transform", "translate(" + x + "," + y + ")");
 				}
 			}
 		});
