@@ -153,7 +153,17 @@ var Koral = {
 			r.push({x:x, y:yFunc(x)});
 		}
 		return r;
-    }
+    },
+
+    textWidth: function(text, font) {
+    	// if given, use cached canvas for better performance
+    	// else, create new canvas
+    	var canvas = Koral.textWidth.canvas || (Koral.textWidth.canvas = document.createElement("canvas"));
+    	var context = canvas.getContext("2d");
+    	context.font = font;
+    	var metrics = context.measureText(text);
+    	return metrics.width;
+	}
 };
 
 function loadPlots()
@@ -244,7 +254,7 @@ function loadPlots()
 		tickHalfLengthSmall: 2,
 		plotMargin: 12,
 
-		legend: undefined
+		legend: undefined // { "vert":0, "horiz":1, "label": undefined} // label optional
 	};
 
 	var plotDrawDefaults = {
@@ -701,14 +711,19 @@ function loadPlots()
 				var bb = g.append("rect");
 				var gl = g.append("g"); 
 
+				var lineHeight = 18;
 				var legendIndex = 0;
+				if (conf.legend.label != null)
+				{
+					gl.append("text").text(conf.legend.label).classed("plotText legendText", true).attr("x", 5).attr("y", lineHeight*legendIndex + 16);
+					legendIndex++;
+				}
+
 				$(this).find("g[data-url]").each(function (i, v) 
 				{
 		 			var url = $(this).data("url");
 					var drawOptions = $(this).data("config");
 					var drawConf = $.extend({}, plotDrawDefaults, drawOptions == null ? {} : drawOptions);
-					
-					var lineHeight = 18;
 
 					if (drawConf.label != null && (drawConf.type === "points" || drawConf.type === "line"))
 					{

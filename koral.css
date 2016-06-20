@@ -90,7 +90,7 @@ article > h4 {
 
 figure {
 	font-size: 90%;
-	/*text-align: center;*/
+	line-height: 1.1rem;
 	color: rgb(102,102,102);
 	counter-increment: figures;
 }
