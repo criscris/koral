@@ -620,6 +620,7 @@ function loadPlots()
 						var x = Number(e[colNames[drawConf.xData]]);
 						var y = Number(e[colNames[drawConf.yData]]);
 						var z = Number(e[colNames[drawConf.zData]]);
+						if (isNaN(z)) continue;
 
 						var normx = conf.xTransform(x);
 
