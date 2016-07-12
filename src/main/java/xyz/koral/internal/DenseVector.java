@@ -43,7 +43,9 @@ public interface DenseVector
 		return "numeric";
 	}
 	
-	Class<?> type();
+	default Class<?> type() {
+		return String.class;
+	}
 	
 	long memorySize();
 	
