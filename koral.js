@@ -262,6 +262,8 @@ function loadPlots()
 		xData: 0,
 		yData: 1,
 		zData: 2,
+		x2Data: undefined,
+		y2Data: undefined,
 		type: "points", // line, errorBars, area
 		size: 2.0,
 		color: "rgb(0, 0, 255)",
@@ -526,6 +528,7 @@ function loadPlots()
 				}
 				
 				var g = d3.select($(this).get(0));
+				g.append("title").text(url);
 				g.attr("fill", drawConf.color);
 
 				if (drawConf.type === "points")
@@ -543,7 +546,28 @@ function loadPlots()
 						if (normx < 0 || normx > 1 || normy < 0 || normy > 1) continue;
 
 						var t = null;
-						if (drawConf.realSize == null)
+						if (drawConf.x2Data != null && drawConf.y2Data != null)
+						{
+							var x0 = x;
+							var x1 = Number(e[colNames[drawConf.x2Data]]);
+							var y0 = y;
+							var y1 = Number(e[colNames[drawConf.y2Data]]);
+							var normx0 = conf.xTransform(x0);
+							var normx1 = conf.xTransform(x1);
+							var normy0 = conf.yTransform(y0);
+							var normy1 = conf.yTransform(y1);
+							var screenx0 = normx0 * conf.plotWidth;
+							var screenx1 = normx1 * conf.plotWidth;
+							var screeny0 = (1.0 - normy0) * conf.plotHeight;
+							var screeny1 = (1.0 - normy1) * conf.plotHeight;
+
+							if (drawConf.shape === "rect")
+							{
+								t = g.append("rect").attr("width", Math.abs(screenx1-screenx0)).attr("height", 
+									Math.abs(screeny0-screeny1)).attr("x", Math.min(screenx0, screenx1)).attr("y", Math.min(screeny0, screeny1));
+							}
+						}
+						else if (drawConf.realSize == null)
 						{
 							var screenx = normx * conf.plotWidth;
 							var screeny = (1.0 - normy) * conf.plotHeight;
