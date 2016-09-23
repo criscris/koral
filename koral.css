@@ -25,7 +25,7 @@ a:hover {
 
 article {
 	font-size: 0.81rem;
-	counter-reset: figures equations;
+	counter-reset: figures equations tables;
 	line-height: 1.15rem;
 }
 
@@ -182,7 +182,8 @@ article figcaption {
 	text-align: left;
 }
 
-article figcaption .main {
+article figcaption .main,
+article caption .main {
 	font-weight: 700;
 }
 
@@ -202,6 +203,8 @@ article .equation:after {
 	line-height:200%;
 }
 
+
+
 .table { display: table; }
 .row { display: table-row; }
 .cell { display: table-cell; }
@@ -209,6 +212,48 @@ article .equation:after {
 .reference {
 	line-height: 1.15rem;
 	margin-bottom: 0.5rem;
+}
+
+article table {
+	font-size: 90%;
+	line-height: 1.1rem;
+	color: rgb(102,102,102);
+	counter-increment: tables;
+	border-collapse: collapse;
+}
+
+article table caption {
+	text-align: left;
+}
+
+article table th {
+	text-align: left;
+	border-bottom: 1px solid black;
+}
+
+article table tr:last-child {
+	 border-bottom: 1px solid black;
+}
+
+
+article table th, article table td {
+	padding:0 0.5rem 0 0.5rem;
+}
+
+article table th:first-child, 
+article table th:last-child, 
+article table td:first-child, 
+article table td:last-child {
+  padding: 0;
+}
+
+article table td.number {
+	 text-align: right;
+}
+
+article table caption:before {
+	content: 'Table ' counter(tables) ': ';
+	font-weight: 700;
 }
 
 svg .plotStroke {

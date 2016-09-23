@@ -721,6 +721,11 @@ var KoralInternal = {
 
 
 var KoralPlot = {
+	tableDefaults: {
+		cols: undefined, // which columns to display; array of 0-based column indices
+		toFixed: undefined // whether numbers shall be rounded; number of digits to be rounded
+	},
+
 	plotDefaults: { 
 		plotWidth: 240, // size of actual plot area
 		plotHeight: 240,
@@ -823,7 +828,7 @@ var KoralPlot = {
 	{
 		var part = $(domPart);
 
-		if (part.find("figure").length == 0) return;
+		if (part.find("figure").length == 0 && part.find("table").length == 0) return;
 
 		// step 0: arrange figures
 		part.find("figure").each(function (index, value) 
@@ -844,7 +849,7 @@ var KoralPlot = {
 		});
 
 		// step 0b: urls
-		$("article").each(function (index, value) 
+		$("article").each(function (index, value)  // bug? what happens with several articles? use only article that is parent 
 		{
 			var prefix = $(this).data("urlprefix");
 			if (prefix != null && prefix.length > 0)
@@ -859,12 +864,12 @@ var KoralPlot = {
 
 		// step 1: load all csv data
 		var urls = {};
-		part.find("svg > [data-url]").each(function (index, value) 
+		part.find("[data-url]").each(function (index, value) 
 		{
 			var url = $(this).data("url");
 			urls[url] = true;
 		});
-		part.find("svg > [data-generator]").each(function (index, value) 
+		part.find("[data-generator]").each(function (index, value) 
 		{
 			var code = $(this).data("generator");
 			var data = eval(code);
@@ -877,7 +882,7 @@ var KoralPlot = {
 			}
 			urls[url] = data;
 		});
-		part.find("svg > [data-source]").each(function (index, value) 
+		part.find("[data-source]").each(function (index, value) 
 		{
 			var dataSerialized = $(this).data("source");
 			var lines = dataSerialized.match(/[^\r\n]+/g);
@@ -914,9 +919,65 @@ var KoralPlot = {
 			}));
 		}
 
-		// step 2: draw plots
+		// step 3: layout tables + draw plots
 		$.when.apply($, ajaxes).done(function() // // it's ok for ajaxes to be empty array
 		{
+			part.find("table").each(function (index, value)
+			{
+				var url = $(this).data("url");
+				if (url == null) return;
+				var data = urls[url];
+
+				console.log("table url=" + url);
+				var colNames = Object.getOwnPropertyNames(data[0]);
+				console.log(colNames);
+
+				var conf = Koral.getJsonDataAttribute(this, "config", KoralPlot.tableDefaults);
+				if (conf.cols == null)
+				{
+					conf.cols = [];
+					for (var i=0; i<colNames.length; i++) conf.cols.push(i);
+				}
+
+				var tbody = $(this).find("tbody");
+				if (tbody.length == 0)
+				{
+					tbody = $(this).append("<tbody></tbody>");
+				}
+
+				if (tbody.find("th").length == 0) // no user-defined table header
+				{
+					var row = $("<tr></tr>");
+					for (var i=0; i<conf.cols.length; i++)
+					{
+						row.append($("<th></th>").text(colNames[conf.cols[i]]));
+					}
+					tbody.append(row);
+				}
+
+				var f = conf.toFixed != null;
+				for (var i=0; i<data.length; i++)
+				{
+					var row = $("<tr></tr>");
+					var e = data[i];
+					for (var j=0; j<conf.cols.length; j++)
+					{
+						var x = e[colNames[conf.cols[j]]];
+						var isNum = !isNaN(x);
+
+						if (f && isNum)
+						{
+							x = Number(x).toFixed(conf.toFixed);
+						}
+
+						var col = $("<td></td>").text(x);
+						if (isNum) col.toggleClass("number", true);
+						row.append(col);
+					}
+					tbody.append(row);
+				}
+			});
+
 			part.find("svg.plot").each(function (index, value)
 			{
 				var conf = Koral.getJsonDataAttribute(this, "config", KoralPlot.plotDefaults);
