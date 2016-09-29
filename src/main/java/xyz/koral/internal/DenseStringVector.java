@@ -179,11 +179,6 @@ public class DenseStringVector implements DenseVector
 		return "string";
 	}
 	
-	public Class<?> type() 
-	{
-		return String.class;
-	}
-	
 	public long memorySize()
 	{
 		return data.size() * 4 + 16 + estStringMemorySize;

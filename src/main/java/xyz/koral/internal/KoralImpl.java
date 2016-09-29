@@ -78,13 +78,6 @@ public class KoralImpl implements Koral
 		return ids;
 	}
 	
-	public List<String> arrayIDs(QID baseNamespace)
-	{
-		return arrayIDs(baseNamespace.get());
-	}
-	
-
-	
 	public KoralImpl(Array... arrays)
 	{
 		add(arrays);
@@ -299,11 +292,6 @@ public class KoralImpl implements Koral
 		return k;
 	}
 	
-	public Array asArray(String qID)
-	{
-		return asArray(new QID(qID));
-	}
-	
 	public Array asArray(QID qID)
 	{
 		for (Array a : arrays)
@@ -314,11 +302,6 @@ public class KoralImpl implements Koral
 			}
 		}
 		return null;
-	}
-	
-	public <T> StreamIterable<T> asTable(Class<T> clazz, String... qualifiedIDs)
-	{
-		return asTable(null, clazz, qualifiedIDs);
 	}
 	
 	private static Map<Array, FieldSetter> getFieldMapping(Map<String, Array> localIDtoArray, Class<?> clazz)
@@ -483,11 +466,6 @@ public class KoralImpl implements Koral
 		return idToArray;
 	}
 	
-	public <T> StreamIterable<T> asTableFiltered(QID baseNamespace, Class<T> clazz, List<String> ids)
-	{
-		return asTableFiltered(baseNamespace.get(), clazz, ids.toArray(new String[0]));
-	}
-	
 	public <T> StreamIterable<T> asTableFiltered(String baseNamespace, Class<T> clazz, String... ids)
 	{
 		if (usedIndices == null) throw new KoralError("apply indices filter before calling Koral.asTableFiltered");
@@ -589,11 +567,6 @@ public class KoralImpl implements Koral
 			}
 		};
 	}
-	
-	public <T> StreamIterable<T> asTable(QID baseNamespace, Class<T> clazz, List<String> ids)
-	{
-		return asTable(baseNamespace.get(), clazz, ids.toArray(new String[0]));
-	} 
 	
 	public <T> StreamIterable<T> asTable(String baseNamespace, Class<T> clazz, String... ids)
 	{
@@ -814,11 +787,6 @@ public class KoralImpl implements Koral
 				};
 			}
 		};
-	}
-	
-	public StreamIterable<Map<String, List<Entry>>> asTable(String baseNamespace, List<String> ids)
-	{
-		return asTable(baseNamespace, ids.toArray(new String[0]));
 	}
 	
 	public StreamIterable<Map<String, List<Entry>>> asTable(String baseNamespace, String... ids)
