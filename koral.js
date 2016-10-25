@@ -836,12 +836,23 @@ var KoralPlot = {
 			var children = $(this).children("svg, img, object");
 			if (children.length > 1)
 			{
-				var firstLetter = "a".charCodeAt(0);
 				var index = 0;
 				children.each(function (i, v) 
 				{
 					$(this).wrap("<div style='float:left'></div>");
-					$(this).parent().append("<p style='margin-left: 3rem'>(" + String.fromCharCode(firstLetter + index) + ")</p>");
+					
+					if ($(this).prop("tagName") === "svg")
+					{
+						console.log("is svg!");
+						var svg = d3.select($(this).get(0));
+						var letter = String.fromCharCode("A".charCodeAt(0) + index);
+						svg.append("text").text(letter).classed("figureLetter", true).attr("x", -48).attr("y", 0);	
+					}
+					else
+					{
+						var letter = String.fromCharCode("a".charCodeAt(0) + index);
+						$(this).parent().append("<p style='margin-left: 3rem'>(" + letter + ")</p>");
+					}
 					index++;
 				});
 				$(this).children("figcaption").css("clear", "left");

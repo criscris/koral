@@ -270,6 +270,13 @@ svg .plotText {
 	fill:rgb(0,0,0);
 }
 
+svg .figureLetter {
+	font-weight: 700;
+	font-family:'Arial';
+	fill:rgb(0,0,0);
+	font-size: 16px;
+}
+
 svg .axis {
 	font-size: 16px;
 }
