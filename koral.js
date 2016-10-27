@@ -1,4 +1,17 @@
 var Koral = {
+	onload: function(callback) {
+		if (document.readyState === 'complete') {
+		   callback();
+		}
+		else
+		{
+			window.onload = function(e)
+			{
+				callback();
+			}
+		}
+	},
+
     xy: function(xmin, xmax, xby, yFunc) {
     	r = [];
 		for (var x=xmin; x<=xmax; x+=xby)
