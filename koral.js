@@ -71,6 +71,35 @@ var Koral = {
 	            return sParameterName[1] === undefined ? true : sParameterName[1];
 	        }
 	    }
+	},
+
+	// taken from http://stackoverflow.com/a/39420250
+	setUrlParameter: function(param, value) {
+		var currentURL = window.location.href;
+		var urlObject = currentURL.split("?");
+		var newQueryString = "?";
+        value = encodeURIComponent(value);
+        if(urlObject.length > 1) {
+			var queries = urlObject[1].split("&");
+			var updatedExistingParam = false;
+			for (var i=0; i<queries.length; i++) {
+              var queryItem = queries[i].split("=");
+              if(queryItem.length > 1){
+                if(queryItem[0] == param){
+                  newQueryString += queryItem[0] + "=" + value + "&";
+                  updatedExistingParam = true;
+                }else{
+                  newQueryString += queryItem[0] + "=" + queryItem[1] + "&";
+                }
+              }
+            }
+          if(!updatedExistingParam){
+            newQueryString += param + "=" + value + "&";
+          }
+        }else{
+          newQueryString += param + "=" + value + "&";
+        }
+        window.history.replaceState("", "", urlObject[0] + newQueryString.slice(0, -1));
 	}
 };
 
