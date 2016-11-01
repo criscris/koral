@@ -1,6 +1,7 @@
 var Koral = {
 	onload: function(callback) {
-		if (document.readyState === 'complete') {
+		if (document.readyState === 'complete') 
+		{
 		   callback();
 		}
 		else
@@ -232,6 +233,395 @@ var KoralArticle = function(article) {
 	}
 };
 
+var KoralUI = {
+	// entries is an array with objects that have properties 
+	// 'label' (String) and 'onclick' (function), optionally 'id' (String)
+	menu: function(entries) {
+		var entryHeight = 32;
+		$("<div class='menu'>" + 
+			"<div>" +
+			    "<svg width='31px' height='31px'>" +
+			      "<style>" +
+			      	".menuButton { cursor:pointer; } " +
+			      	".menuBR { fill:rgb(255,255,255); } " +
+			      	".menuButton:hover .menuBR { fill:rgb(230,230,230); } " +
+			      	".ham { fill:rgb(80,80,80); }" +
+			      "</style>" +
+			      "<g class='menuButton'>" +
+			        "<rect width='31' height='31' class='menuBR'></rect>" +
+			        "<rect x='8' y='8' width='15' height='3' class='ham'></rect>" +
+			        "<rect x='8' y='14' width='15' height='3' class='ham'></rect>" +
+			        "<rect x='8' y='20' width='15' height='3' class='ham'></rect>" +
+			       "</g>" +
+			    "</svg>" +
+		  	"</div>" +
+		  	"<div id='mainMenu' style='visibility: hidden;'>" + 
+				"<svg width='148' height='" + (entryHeight*entries.length) + "'>" + 
+					"<style>" +
+        				".menuT { color: rgb(0,0,0); font-family: 'Arial'; font-size: 16px; } " +
+        				".menuE { cursor:pointer; } " +
+        				".menuR { fill:rgb(255,255,255); } " +
+        				".menuE:hover .menuR { fill:rgb(230,230,230); }" +
+      	  		 	"</style>" + 
+      	  		 	"<g transform='translate(8, 0)'>" + 
+      	  		 		"<g id='menuEntries'></g>" +
+      	  		 		"<rect width='140' height='" + (entryHeight*entries.length) + "' style='fill:none; stroke:rgb(153, 153, 153); stroke-width:1px'></rect>" + 
+      	  		 	"</g>" +
+		   		"</svg>" +
+		  	"</div>" +
+		  "</div>").appendTo($("body").first());
+		var m = d3.select("#menuEntries");
+
+		for (var i=0; i<entries.length; i++)
+		{
+			var g = m.append("g")
+				.attr("transform", "translate(0, " + (entryHeight*i) +")")
+				.classed("menuE", true);
+			g.append("rect")
+				.attr("width", "140")
+				.attr("height", "32")
+				.classed("menuR", true);
+			var text = g.append("text")
+				.attr("x", "8")
+				.attr("y", 24)
+				.classed("menuT", true)
+				.text(entries[i].label);
+			if (entries[i].id) text.attr("id", entries[i].id);
+			g.on("click", entries[i].onclick);
+		}
+
+		document.body.onclick = function(e) { 
+			document.getElementById('mainMenu').style.visibility='hidden';
+		}                                   
+		document.querySelector('.menuButton').addEventListener("click", function(e) {
+			document.getElementById('mainMenu').style.visibility='visible'; 
+			e.stopPropagation();
+		}, false);
+	},
+
+	drag: function(element, attachElement, lowerBound, upperBound, startCallback, moveCallback, endCallback, attachLater, boundCallback) {
+		function hookEvent(element, eventName, callback)
+		{
+			if(typeof(element) == "string") element = document.getElementById(element);
+			if(element == null) return;
+			if(element.addEventListener) element.addEventListener(eventName, callback, false);
+			else if(element.attachEvent) element.attachEvent("on" + eventName, callback);
+		}
+
+		function unhookEvent(element, eventName, callback)
+		{
+		  if(typeof(element) == "string") element = document.getElementById(element);
+		  if(element == null) return;
+		  if(element.removeEventListener) element.removeEventListener(eventName, callback, false);
+		  else if(element.detachEvent) element.detachEvent("on" + eventName, callback);
+		}
+
+		function cancelEvent(e)
+		{
+		  e = e ? e : window.event;
+		  if(e.stopPropagation) e.stopPropagation();
+		  if(e.preventDefault) e.preventDefault();
+		  e.cancelBubble = true;
+		  e.cancel = true;
+		  e.returnValue = false;
+		  return false;
+		}
+
+		function Position(x, y)
+		{
+		  this.X = x;
+		  this.Y = y;
+		  
+		  this.Add = function(val)
+		  {
+		    var newPos = new Position(this.X, this.Y);
+		    if(val != null)
+		    {
+		      if(!isNaN(val.X))
+		        newPos.X += val.X;
+		      if(!isNaN(val.Y))
+		        newPos.Y += val.Y;
+		    }
+		    return newPos;
+		  };
+		  
+		  this.Subtract = function(val)
+		  {
+		    var newPos = new Position(this.X, this.Y);
+		    if(val != null)
+		    {
+		      if(!isNaN(val.X))
+		        newPos.X -= val.X;
+		      if(!isNaN(val.Y))
+		        newPos.Y -= val.Y;
+		    }
+		    return newPos;
+		  };
+		  
+		  this.Min = function(val)
+		  {
+		    var newPos = new Position(this.X, this.Y);
+		    if(val == null)
+		      return newPos;
+		    
+		    if(!isNaN(val.X) && this.X > val.X)
+		      newPos.X = val.X;
+		    if(!isNaN(val.Y) && this.Y > val.Y)
+		      newPos.Y = val.Y;
+		    
+		    return newPos;  
+		  };
+		  
+		  this.Max = function(val)
+		  {
+		    var newPos = new Position(this.X, this.Y);
+		    if(val == null)
+		      return newPos;
+		    
+		    if(!isNaN(val.X) && this.X < val.X)
+		      newPos.X = val.X;
+		    if(!isNaN(val.Y) && this.Y < val.Y)
+		      newPos.Y = val.Y;
+		    
+		    return newPos;  
+		  };
+		  
+		  this.Bound = function(lower, upper)
+		  {
+		    var newPos = this.Max(lower);
+		    return newPos.Min(upper);
+		  };
+		  
+		  this.Check = function()
+		  {
+		    var newPos = new Position(this.X, this.Y);
+		    if(isNaN(newPos.X))
+		      newPos.X = 0;
+		    if(isNaN(newPos.Y))
+		      newPos.Y = 0;
+		    return newPos;
+		  };
+		  
+		  this.Apply = function(element)
+		  {
+		    if(typeof(element) == "string")
+		      element = document.getElementById(element);
+		    if(element == null)
+		      return;
+		    if(!isNaN(this.X))
+		      element.style.left = this.X + 'px';
+		    if(!isNaN(this.Y))
+		      element.style.top = this.Y + 'px';  
+		  };
+		}
+
+		function absoluteCursorPostion(eventObj)
+		{
+		  eventObj = eventObj ? eventObj : window.event;  
+		  if(isNaN(window.scrollX))
+		    return new Position(eventObj.clientX + document.documentElement.scrollLeft + document.body.scrollLeft, 
+		      eventObj.clientY + document.documentElement.scrollTop + document.body.scrollTop);
+		  else
+		    return new Position(eventObj.clientX + window.scrollX, eventObj.clientY + window.scrollY);
+		}
+
+
+	  	if(typeof(element) == "string") element = document.getElementById(element);
+	  	if(element == null) return;
+	  
+		if(lowerBound != null && upperBound != null)
+		{
+			var temp = lowerBound.Min(upperBound);
+			upperBound = lowerBound.Max(upperBound);
+			lowerBound = temp;
+		}
+
+		var cursorStartPos = null;
+		var elementStartPos = null;
+		var dragging = false;
+		var listening = false;
+		var disposed = false;
+	  
+		function dragStart(eventObj)
+		{ 
+			if(dragging || !listening || disposed) return;
+			dragging = true;
+
+			if(startCallback != null) startCallback(eventObj, element);
+			cursorStartPos = absoluteCursorPostion(eventObj);
+			elementStartPos = new Position(parseInt(element.style.left), parseInt(element.style.top));
+			elementStartPos = elementStartPos.Check();
+			hookEvent(document, "mousemove", dragGo);
+			hookEvent(document, "mouseup", dragStopHook);
+			return cancelEvent(eventObj);
+		}
+	  
+	  	function dragGo(eventObj)
+	  	{
+	    	if(!dragging || disposed) return;
+	    
+	    	var newPos = absoluteCursorPostion(eventObj);
+	    	newPos = newPos.Add(elementStartPos).Subtract(cursorStartPos);
+	    	newPos = newPos.Bound(lowerBound, upperBound);
+	    	newPos.Apply(element);
+	    	if(moveCallback != null) moveCallback(newPos, element);
+	    	return cancelEvent(eventObj); 
+	  	}
+	  
+		function dragStopHook(eventObj)
+		{
+			dragStop();
+			return cancelEvent(eventObj);
+		}
+
+	  	function dragStop()
+	  	{
+	    	if(!dragging || disposed) return;
+	    	unhookEvent(document, "mousemove", dragGo);
+	    	unhookEvent(document, "mouseup", dragStopHook);
+	    	cursorStartPos = null;
+	    	elementStartPos = null;
+	    	if(endCallback != null) endCallback(element);
+	    	dragging = false;
+	  	}
+
+	  	function DragObject()
+	  	{
+	  		this.Dispose = function()
+			{
+				if(disposed) return;
+				this.StopListening(true);
+				element = null;
+				attachElement = null;
+				lowerBound = null;
+				upperBound = null;
+				startCallback = null;
+				moveCallback = null;
+				endCallback = null;
+				disposed = true;
+			};
+
+			this.StartListening = function()
+			{
+				if(listening || disposed) return;
+				listening = true;
+				hookEvent(attachElement, "mousedown", dragStart);
+			};
+
+			this.StopListening = function(stopCurrentDragging)
+			{
+				if(!listening || disposed) return;
+				unhookEvent(attachElement, "mousedown", dragStart);
+				listening = false;
+
+				if(stopCurrentDragging && dragging) dragStop();
+			};
+
+			this.IsDragging = function() { return dragging; };
+			this.IsListening = function() { return listening; };
+			this.IsDisposed = function() { return disposed; };
+
+			if(typeof(attachElement) == "string") attachElement = document.getElementById(attachElement);
+			if(attachElement == null) attachElement = element;
+			if(!attachLater) this.StartListening();
+		}
+		new DragObject();
+	},
+
+	dialog: function(title, contentNode, dialogButtonList)
+	{
+		var m = $("<div></div>");
+		m.appendTo(document.body);
+
+		var $backgroundLayer = $("<div></div>");
+		$backgroundLayer.attr("class", "dialogBg");
+		m.append($backgroundLayer);
+		
+		var cx = $backgroundLayer.width() / 2;
+		var cy = $backgroundLayer.height() / 2 + $(window).scrollTop();
+
+		var pageHeight = $(window).height();
+		$backgroundLayer.css("height", pageHeight + "px");
+		var $dialogDiv = $("<div style=\"position:absolute;\"/>");
+		
+		$dialogDiv.attr("class", "dialogWindow");
+		m.append($dialogDiv);
+		
+		var $firstRow = $("<div style=\"width:100%\" />");
+		$dialogDiv.append($firstRow);
+		var $dialogHeader = $("<div style=\"float:left;\" class=\"dialogTitle\">" + title + "</div>");
+		$firstRow.append($dialogHeader);
+		$firstRow.append($("<div style=\"height:30px;width:100%\"><!-- _ --></div>"));
+		
+		var $dialogContent = $("<div class=\"dialogContent\"/>");
+		$dialogDiv.append($dialogContent);
+		$dialogContent.append(contentNode);
+		
+		var $buttons = $("<table style=\"float:right;\"/>");
+		$buttons.attr("cellspacing", "0");
+		$buttons.attr("cellpadding", "0");
+		$dialogDiv.append($buttons);
+		var $buttonsRow = $("<tr />");
+		$buttons.append($buttonsRow);
+		
+		var close = function()
+		{
+			$dialogDiv.remove();
+			$backgroundLayer.remove();
+		}
+		
+		for (var i=0; i<dialogButtonList.length; i++)
+		{
+			var $button = $("<td><div class=\"dialogAction\">" + dialogButtonList[i].name + "</div></td>"); 
+			$buttonsRow.append($button);
+			
+			(function(f)
+			{
+				$button.click(function() 
+				{
+					if (f()) close();
+				});
+			})(dialogButtonList[i].onclickfunc);
+
+		}
+		
+		$cancelButtonEntry = $("<td />");
+		$cancelButton = $("<div class=\"dialogAction\">Cancel</div>"); 
+		$cancelButtonEntry.append($cancelButton);
+		$buttonsRow.append($cancelButtonEntry);
+		
+		$cancelButtonEntry.click(function() 
+		{
+			close();
+		});
+		
+		$backgroundLayer.click(function() 
+		{
+			close();
+		});
+		
+		KoralUI.drag($dialogDiv.get(0), $dialogHeader.get(0));
+		
+		
+		var dw = $dialogDiv.width();
+		var dh = $dialogDiv.height();
+		
+		var left = cx - dw/2;
+		var top = cy - dh/2;
+		$dialogDiv.css("left", left + "px");
+		$dialogDiv.css("top", top + "px");
+	},
+
+	popup: function(text) {
+		var m = $("<div class='infoMessage'></div>");
+		var c = $("<div class='infoMessageContent'></div>");
+		c.text(text);
+		c.appendTo(m);
+		m.appendTo(document.body);
+		setTimeout(function() { m.remove(); }, 2500);
+	},
+}
+
 var KoralInternal = {
 	koralScriptURL: null,
 	originalDocument: null,
@@ -409,84 +799,20 @@ var KoralInternal = {
 		KoralInternal.addMenu();
 	},
 
-	// entries is an array with objects that have properties 
-	// 'label' (String) and 'onclick' (function), optionally 'id' (String)
-	addMenuUI: function(entries) {
-		var entryHeight = 32;
-		$("<div class='menu'>" + 
-			"<div>" +
-			    "<svg width='31px' height='31px'>" +
-			      "<style>" +
-			      	".menuButton { cursor:pointer; } " +
-			      	".menuBR { fill:rgb(255,255,255); } " +
-			      	".menuButton:hover .menuBR { fill:rgb(230,230,230); } " +
-			      	".ham { fill:rgb(80,80,80); }" +
-			      "</style>" +
-			      "<g class='menuButton'>" +
-			        "<rect width='31' height='31' class='menuBR'></rect>" +
-			        "<rect x='8' y='8' width='15' height='3' class='ham'></rect>" +
-			        "<rect x='8' y='14' width='15' height='3' class='ham'></rect>" +
-			        "<rect x='8' y='20' width='15' height='3' class='ham'></rect>" +
-			       "</g>" +
-			    "</svg>" +
-		  	"</div>" +
-		  	"<div id='mainMenu' style='visibility: hidden;'>" + 
-				"<svg width='148' height='" + (entryHeight*entries.length) + "'>" + 
-					"<style>" +
-        				".menuT { color: rgb(0,0,0); font-family: 'Arial'; font-size: 16px; } " +
-        				".menuE { cursor:pointer; } " +
-        				".menuR { fill:rgb(255,255,255); } " +
-        				".menuE:hover .menuR { fill:rgb(230,230,230); }" +
-      	  		 	"</style>" + 
-      	  		 	"<g transform='translate(8, 0)'>" + 
-      	  		 		"<g id='menuEntries'></g>" +
-      	  		 		"<rect width='140' height='" + (entryHeight*entries.length) + "' style='fill:none; stroke:rgb(153, 153, 153); stroke-width:1px'></rect>" + 
-      	  		 	"</g>" +
-		   		"</svg>" +
-		  	"</div>" +
-		  "</div>").appendTo($("body").first());
-		var m = d3.select("#menuEntries");
-
-		for (var i=0; i<entries.length; i++)
-		{
-			var g = m.append("g")
-				.attr("transform", "translate(0, " + (entryHeight*i) +")")
-				.classed("menuE", true);
-			g.append("rect")
-				.attr("width", "140")
-				.attr("height", "32")
-				.classed("menuR", true);
-			var text = g.append("text")
-				.attr("x", "8")
-				.attr("y", 24)
-				.classed("menuT", true)
-				.text(entries[i].label);
-			if (entries[i].id) text.attr("id", entries[i].id);
-			g.on("click", entries[i].onclick);
-		}
-
-		document.body.onclick = function(e) { 
-			document.getElementById('mainMenu').style.visibility='hidden';
-		}                                   
-		document.querySelector('.menuButton').addEventListener("click", function(e) {
-			document.getElementById('mainMenu').style.visibility='visible'; 
-			e.stopPropagation();
-		}, false);
-	},
-
 	addMenu: function() {
 		var menuEntries = [{ label:"Edit", onclick: KoralInternal.toggleEditMode, id:"editToggle" }];
-		menuEntries.push({ label:"Download HTML", onclick: KoralInternal.downloadHTML });
+		
 		if (window.location.protocol !== "file:")
 		{
 			menuEntries.push({ label:"Save", onclick: KoralInternal.saveOnServer });
+			menuEntries.push({ label:"Save and Commit", onclick: KoralInternal.commitOnServer });
 			menuEntries.push({ label:"History", onclick: KoralInternal.history });
-
-			//menuEntries.push({ label:"Export as PDF", onclick: KoralInternal.exportAsPDF });
-			//menuEntries.push({ label:"Export as LaTeX", onclick: KoralInternal.exportAsLatex });
 		}
+		menuEntries.push({ label:"Download HTML", onclick: KoralInternal.downloadHTML });
+		menuEntries.push({ label:"Print / PDF", onclick: KoralInternal.exportAsPDF });
+		//menuEntries.push({ label:"Export as LaTeX", onclick: KoralInternal.exportAsLatex });
 
-		KoralInternal.addMenuUI(menuEntries);
+		KoralUI.menu(menuEntries);
 	},
 
 	activateEditing: function(article, paragraph) {
@@ -645,33 +971,62 @@ var KoralInternal = {
 		window.open("/githistory?path=" + window.location.pathname, "_blank");
 	},
 
-	showMessagePopup: function(text)
-	{
-		var m = $("<div class='infoMessage'></div>");
-		var c = $("<div class='infoMessageContent'></div>");
-		c.text(text);
-		c.appendTo(m);
-		m.appendTo(document.body);
-		setTimeout(function() { m.remove(); }, 2500);
-	},
-
 	saveOnServer: function() 
 	{
-		var author = Koral.getUrlParameter("author");
-
 		KoralInternal.getDocumentLocal(function(str) {
 			$.ajax({
 		 		type: "POST",
-		  		url: "/commit?path=" + window.location.pathname + (author ? "&author=" + author : ""),
+		  		url: "/save?path=" + window.location.pathname,
 		  		data: str,
 		  		success: function(data) {
-		  			KoralInternal.showMessagePopup(data);
+		  			KoralUI.popup(data);
 		  		},
 		  		dataType: "text"
 			}).fail(function() {
-				KoralInternal.showMessagePopup("Saving failed.");
+				KoralUI.popup("Saving failed.");
 			});
 		});
+	},
+
+
+
+	commitOnServer: function() 
+	{
+		var author = Koral.getUrlParameter("author");
+		if (author == null) author = "";
+
+		var p = $("<div></div>").addClass("form", true);
+		p.append($("<label for='authorField'>Author: </label>"));
+		var authorField = $("<input id='authorField' style='width:100%;' type='text'/>").val(author);
+		p.append(authorField);
+		p.append($("<label for='messageField'>Commit message: </label>"));
+		var messageField = $("<textarea id='messageField' rows='4' cols='40'/>");
+		p.append(messageField);
+
+		var buttons = [ { name: "Save", onclickfunc: function()
+		{
+			author = authorField.val();
+			author = author.trim();
+			if (author.length > 0) Koral.setUrlParameter("author", author);
+			var message = messageField.val();
+
+			KoralInternal.getDocumentLocal(function(str) {
+				$.ajax({
+			 		type: "POST",
+			  		url: "/commit?path=" + window.location.pathname + "&author=" + encodeURIComponent(author) + "&message=" + encodeURIComponent(message),
+			  		data: str,
+			  		success: function(data) {
+			  			KoralUI.popup(data);
+			  		},
+			  		dataType: "text"
+				}).fail(function() {
+					KoralUI.popup("Saving and committing failed.");
+				});
+			});
+
+			return true;
+		}} ];
+		KoralUI.dialog("Save", p.get(0), buttons);
 	},
 
 	getDocumentLocal: function(callback)
@@ -753,7 +1108,9 @@ var KoralInternal = {
 	},
 
 	exportAsPDF: function() {
-
+		setTimeout(function() {
+			window.print();
+		}, 0);
 	},
 
 	exportAsLatex: function() {
@@ -885,7 +1242,6 @@ var KoralPlot = {
 					
 					if ($(this).prop("tagName") === "svg")
 					{
-						console.log("is svg!");
 						var svg = d3.select($(this).get(0));
 						var letter = String.fromCharCode("A".charCodeAt(0) + index);
 						svg.append("text").text(letter).classed("figureLetter", true).attr("x", -48).attr("y", 0);	
