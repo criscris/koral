@@ -669,6 +669,7 @@ var KoralInternal = {
     equationIDtoNumber: {},
 
     importScripts: function (onLoadCallback) {
+		document.writeln("<meta name='viewport' content='width=device-width, initial-scale=1'>");
         document.writeln("<link rel='icon' href='data:;base64,iVBORw0KGgo='/>");
 
         var scriptTags = document.getElementsByTagName('script');
