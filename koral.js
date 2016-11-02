@@ -833,8 +833,10 @@ var KoralInternal = {
 
     init: function () {
         KoralInternal.initDocument();
-        MathJax.Hub.Config({tex2jax: {inlineMath: [['$', '$'], ['\\(', '\\)']]},
-            skipStartupTypeset: true});
+        MathJax.Hub.Config({
+        	tex2jax: {inlineMath: [['$', '$'], ['\\(', '\\)']]},
+            skipStartupTypeset: true,
+        	"HTML-CSS": { linebreaks: { automatic:true }}});
 
         $("article").each(function (index, value)
         {
