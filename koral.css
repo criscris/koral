@@ -270,6 +270,12 @@ article .equation {
 	justify-content: space-between;
 }
 
+@media only screen and (max-width: 40rem) {
+	article .equation {
+		max-width: 90vw;
+	}
+}
+
 article .equation:after {
 	content: '(' counter(equations) ')';
 	line-height:200%;
