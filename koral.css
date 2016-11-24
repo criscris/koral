@@ -2,8 +2,12 @@ body {
 	background: rgb(255,255,255);
 	color: rgb(51,51,51);
     font-family: "Arial";
-    font-size: 100%;
+   /* font-size: 100%; */
     margin:0px;
+
+    font-size: 0.81rem;
+	counter-reset: figures equations tables;
+	line-height: 1.15rem;
 }
 
 a, a:link, a:visited, a:active  {
@@ -23,16 +27,9 @@ a:hover {
 	left:0;
 }
 
-article {
-	font-size: 0.81rem;
-	counter-reset: figures equations tables;
-	line-height: 1.15rem;
-}
-
 .article {
 	margin: 2rem;
 }
-
 
 .editTable {
   display:table;
@@ -185,14 +182,14 @@ p .newp {
 }*/
 
 
-article p {
+p {
 	-webkit-margin-before:0;
     -webkit-margin-after:0;
     margin-top:0.2rem;
     margin-bottom:0.8rem;
 }
 
-article h4 {
+h4 {
 	
 	font-size: 100%;
 	line-height: 115%;
@@ -204,7 +201,7 @@ article h4 {
     margin-bottom: 1rem;
 }
 
-article h3 {
+h3 {
 	font-size: 150%;
 	line-height: 115%;
 	font-weight: normal;
@@ -215,7 +212,7 @@ article h3 {
     margin-bottom: 1rem;
 }
 
-article  h2 {
+h2 {
 	font-size: 225%;
 	line-height: 115%;
 	font-weight: normal;
@@ -226,13 +223,13 @@ article  h2 {
     margin-bottom: 2rem;
 }
 
-article .summary {
+.summary {
 	line-height: 1.15rem;
 	font-weight: 700;
 }
 
 
-article figure {
+figure {
 	font-size: 90%;
 	line-height: 1.1rem;
 	color: rgb(102,102,102);
@@ -250,33 +247,33 @@ article figure {
 }
 
 
-article figcaption {
+figcaption {
 	text-align: left;
 }
 
-article figcaption .main,
-article caption .main {
+figcaption .main,
+caption .main {
 	font-weight: 700;
 }
 
-article figure figcaption:before {
+figure figcaption:before {
 	content: 'Fig. ' counter(figures) ': ';
 	font-weight: 700;
 }
 
-article .equation {
+.equation {
 	counter-increment: equations;
 	display: flex; 
 	justify-content: space-between;
 }
 
 @media only screen and (max-width: 40rem) {
-	article .equation {
+	.equation {
 		max-width: 90vw;
 	}
 }
 
-article .equation:after {
+.equation:after {
 	content: '(' counter(equations) ')';
 	line-height:200%;
 }
@@ -292,7 +289,7 @@ article .equation:after {
 	margin-bottom: 0.5rem;
 }
 
-article table {
+table {
 	font-size: 90%;
 	line-height: 1.1rem;
 	color: rgb(102,102,102);
@@ -300,36 +297,36 @@ article table {
 	border-collapse: collapse;
 }
 
-article table caption {
+table caption {
 	text-align: left;
 }
 
-article table th {
+table th {
 	text-align: left;
 	border-bottom: 1px solid black;
 }
 
-article table tr:last-child {
+table tr:last-child {
 	 border-bottom: 1px solid black;
 }
 
 
-article table th, article table td {
+table th, table td {
 	padding:0 0.5rem 0 0.5rem;
 }
 
-article table th:first-child, 
-article table th:last-child, 
-article table td:first-child, 
-article table td:last-child {
+table th:first-child, 
+table th:last-child, 
+table td:first-child, 
+table td:last-child {
   padding: 0;
 }
 
-article table td.number {
+table td.number {
 	 text-align: right;
 }
 
-article table caption:before {
+table caption:before {
 	content: 'Table ' counter(tables) ': ';
 	font-weight: 700;
 }
@@ -435,6 +432,10 @@ pre.prettyprint {
     	page-break-after: auto; 
     	page-break-inside: avoid;
 	}
+
+	.slide {
+		page-break-inside: avoid;
+	}
 }
 
 .commithistory .meta {
@@ -465,4 +466,48 @@ pre.prettyprint {
 
 .commithistory .minus {
 	color: rgb(128,0,0);
+}
+
+.slide {
+	border:1px solid rgb(0,0,0);
+	width:640px;
+	height:360px;
+	padding:1rem;
+	margin-top:1rem;
+	position: relative;
+	box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.slide figure {
+	transform-origin: 0% 0%;
+	transform: scale(0.8);
+}
+
+.slide h2 {
+	margin-top: 0rem;
+	font-size: 130%;
+}
+
+.slide figure {
+	 margin-top: 0;
+}
+
+.slide figure div {
+	 margin: 0;
+	 padding: 0;
+	 -webkit-margin-before:0;
+    -webkit-margin-after:0;
+}
+
+.slide .rfooter {
+	position:absolute;
+	bottom:0rem;
+	right:1rem;
+	font-size:0.9em;
+}
+
+#fullscreenContainer .slide {
+	margin:0;
 }

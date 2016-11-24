@@ -1,13 +1,22 @@
 var Koral = {
+    onloadFuncs: [],
+
     onload: function (callback) {
         if (document.readyState === 'complete')
         {
             callback();
         } else
         {
-            window.onload = function (e)
+            Koral.onloadFuncs.push(callback);
+
+            if (Koral.onloadFuncs.length == 1)
             {
-                callback();
+                window.onload = function (e)
+                {
+                    for (var i=0; i<Koral.onloadFuncs.length; i++) Koral.onloadFuncs[i]();
+
+                    Koral.onloadFuncs = [];
+                }
             }
         }
     },
@@ -172,6 +181,10 @@ var KoralParagraph = function (dom)
             }
         });
 
+        // slide
+        this.leftCol.find(".slide").click(function() {
+            KoralInternal.toggleFullScreen(this);
+        });
     }
 
     this.processContent();
@@ -777,6 +790,12 @@ var KoralInternal = {
             nodesToRemove.push(links[i]);
         }
 
+        var metas = d.getElementsByTagName("head")[0].getElementsByTagName("meta");
+        for (var i = 0; i < metas.length; i++)
+        {
+            if ("viewport" === metas[i].getAttribute("name")) nodesToRemove.push(metas[i]);
+        }
+
         var styles = d.getElementsByTagName("head")[0].getElementsByTagName("style");
         for (var i = 0; i < styles.length; i++)
         {
@@ -844,6 +863,7 @@ var KoralInternal = {
         });
         KoralInternal.loadReferences();
         KoralInternal.addMenu();
+        KoralInternal.slides();
     },
 
     addMenu: function () {
@@ -969,7 +989,14 @@ var KoralInternal = {
                         }
                     }
                     var journal = bib.journal != null ? bib.journal + "." : "";
-                    bibhtml.append("<li id='" + bib.cite + "'>" + authors + " (" + bib.year + "): " + bib.title + ". " + journal + "</li>");
+                    var refText = authors + " (" + bib.year + "): " + bib.title + ". " + journal;
+                    bibhtml.append("<li id='" + bib.cite + "'>" + refText + "</li>");
+
+                    // add tooltip to each link
+                    $("a[href='#" + bib.cite + "']").each(function (index, value)
+                    {
+                        $(this).attr("title", refText);
+                    });
                 }
             }
 
@@ -981,6 +1008,105 @@ var KoralInternal = {
             {
                 var url = $(this).data("url");
                 jQuery.get(url, parseBib);
+            }
+        });
+    },
+
+    toggleFullScreen: function(activatedSlide) {
+        var container = document.getElementById("fullscreenContainer");
+
+        if (!document.fullscreenElement && !document.mozFullScreenElement &&
+            !document.webkitFullscreenElement && !document.msFullscreenElement) 
+        {
+            if (container.requestFullscreen) container.requestFullscreen();
+            else if (container.msRequestFullscreen) container.msRequestFullscreen();
+            else if (container.mozRequestFullScreen) container.mozRequestFullScreen();
+            else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+
+            $(activatedSlide).addClass("fullscreen");
+            var copy = $(activatedSlide).clone();
+            copy.appendTo(container);
+            copy.click(function() {
+                KoralInternal.toggleFullScreen(this);
+            });
+
+            // instead of using :-webkit-full-screen
+            var w = 640;
+            var h = 360;
+            var s1 = screen.width / w;
+            var s2 = screen.height / h;
+            var s = Math.min(s1, s2);
+            $(container).css("transform", "scale(" + s + ")");
+        } 
+        else 
+        {
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.msExitFullscreen) document.msExitFullscreen();
+            else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+
+            $(activatedSlide).removeClass("fullscreen");
+        }
+    },
+
+    slides: function()
+    {
+        $("body").append($("<div style='margin:0;padding:0' id='fullscreenContainer'></div>"));
+
+        function exitHandler()
+        {
+            var fullscreenElement = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement;
+            if (fullscreenElement == null)
+            {
+                $("#fullscreenContainer").empty();
+            }
+
+        }
+
+        document.addEventListener('webkitfullscreenchange', exitHandler, false);
+        document.addEventListener('mozfullscreenchange', exitHandler, false);
+        document.addEventListener('fullscreenchange', exitHandler, false);
+        document.addEventListener('MSFullscreenChange', exitHandler, false);
+
+        $(document).keydown(function(event) 
+        {
+            if (event.keyCode == 37 || event.keyCode == 39)
+            {
+                var slides = $(".slide").toArray();
+                for (var i=0; i<slides.length; i++)
+                {
+                    if ($(slides[i]).hasClass("fullscreen"))
+                    {
+                        if (event.keyCode == 37 && i > 0) // left arrow
+                        {
+                            var newslide = slides[i-1];
+                            $(slides[i]).removeClass("fullscreen");
+                            $(newslide).addClass("fullscreen");
+                            var container = $("#fullscreenContainer")
+                            var copy = $(newslide).clone();
+                            container.empty();
+                            copy.appendTo(container);
+                            copy.click(function() {
+                                KoralInternal.toggleFullScreen(this);
+                            });
+                        }
+                        else if (event.keyCode == 39 && i < slides.length - 1) // right arrow
+                        {
+                            var newslide = slides[i+1];
+
+                            $(slides[i]).removeClass("fullscreen");
+                            $(newslide).addClass("fullscreen");
+                            var container = $("#fullscreenContainer")
+                            var copy = $(newslide).clone();
+                            container.empty();
+                            copy.appendTo(container);
+                            copy.click(function() {
+                                KoralInternal.toggleFullScreen(this);
+                            });
+                        }
+                        break;
+                    }
+                }
             }
         });
     },
@@ -1390,9 +1516,7 @@ var KoralPlot = {
                     return;
                 var data = urls[url];
 
-                console.log("table url=" + url);
                 var colNames = Object.getOwnPropertyNames(data[0]);
-                console.log(colNames);
 
                 var conf = Koral.getJsonDataAttribute(this, "config", KoralPlot.tableDefaults);
                 if (conf.cols == null)
@@ -1866,5 +1990,3 @@ var KoralPlot = {
 };
 
 KoralInternal.importScripts(KoralInternal.init);
-
-
