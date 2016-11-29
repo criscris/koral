@@ -28,7 +28,8 @@ a:hover {
 }
 
 .article {
-	margin: 2rem;
+	margin-left: 2rem;
+	margin-right: 2rem;
 }
 
 .editTable {
@@ -406,37 +407,6 @@ pre.prettyprint {
 	background-color: rgb(245,245,245);
 }
 
-@media print {
-	body { 
-		font-size: .8em; 
-	}
-
-	.menu {
-		visibility: hidden;
-	}
-
-	/*
-	article > p, div.equation, div.references, h2, h3, h4, figure {
-		width:92%;
-		margin-left: 4%;
-		margin-right: 4%;
-	}
-
-	article > figure > figcaption {
-		width: 100%;
-	}
-	*/
-
-	img {
-    	page-break-before: auto; 
-    	page-break-after: auto; 
-    	page-break-inside: avoid;
-	}
-
-	.slide {
-		page-break-inside: avoid;
-	}
-}
 
 .commithistory .meta {
 	color: rgb(0,0,0);
@@ -483,15 +453,14 @@ pre.prettyprint {
 .slide figure {
 	transform-origin: 0% 0%;
 	transform: scale(0.8);
+	margin-top: 0;
+	margin-bottom: 0;
 }
 
 .slide h2 {
 	margin-top: 0rem;
+	margin-bottom: 1.5rem;
 	font-size: 130%;
-}
-
-.slide figure {
-	 margin-top: 0;
 }
 
 .slide figure div {
@@ -508,6 +477,54 @@ pre.prettyprint {
 	font-size:0.9em;
 }
 
+.slide .lfooter {
+	position:absolute;
+	bottom:0rem;
+	left:1rem;
+	font-size:0.9em;
+}
+
 #fullscreenContainer .slide {
 	margin:0;
+}
+
+@media print {
+	body { 
+		font-size: .8em; 
+	}
+
+	.menu {
+		/* visibility: hidden; */
+		display: none !important;
+	}
+
+/*
+	.comment {
+		display: none !important;
+	}
+*/
+
+	/*
+	article > p, div.equation, div.references, h2, h3, h4, figure {
+		width:92%;
+		margin-left: 4%;
+		margin-right: 4%;
+	}
+
+	article > figure > figcaption {
+		width: 100%;
+	}
+	*/
+
+	img {
+    	page-break-before: auto; 
+    	page-break-after: auto; 
+    	page-break-inside: avoid;
+	}
+
+	.slide {
+		page-break-before: always;
+		page-break-inside: avoid;
+		margin-top:0;
+	}
 }
