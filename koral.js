@@ -705,6 +705,8 @@ var KoralInternal = {
         var css = ["lib/codemirror/codemirror.css",
             "lib/codemirror/addon/display/fullscreen.css",
             "lib/code-prettify/prettify.css",
+            "lib/photoswipe/photoswipe.min.css",
+            "lib/photoswipe/default-skin.min.css",
             "koral.css"];
         for (var i = 0; i < css.length; i++)
         {
@@ -745,7 +747,9 @@ var KoralInternal = {
                     "lib/papaparse/papaparse.min.js",
                     "lib/code-prettify/prettify.js",
                     "lib/d3/d3.min.js", // online at https://d3js.org/d3.v3.min.js
-                    "lib/codemirror/codemirror.js"];
+                    "lib/codemirror/codemirror.js",
+                    "lib/photoswipe/photoswipe.min.js", // online at https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.1/photoswipe.min.js
+                    "lib/photoswipe/photoswipe-ui-default.min.js"];
         var scriptsSecondPass =
                 ["lib/codemirror/mode/xml/xml.js",
                     "lib/codemirror/mode/javascript/javascript.js",
@@ -1013,6 +1017,54 @@ var KoralInternal = {
     },
 
     toggleFullScreen: function(activatedSlide) {
+        var pswpElement = document.querySelectorAll('.pswp')[0];
+
+        var w = 640;
+        var h = 360;
+        var s1 = screen.width / w;
+        var s2 = screen.height / h;
+        var scale = Math.min(s1, s2);
+
+        var slides =  $(".slide").not(".fullscreen").toArray();
+        var items = [];
+        var slideIndex = -1;
+        for (var i=0; i<slides.length; i++)
+        {
+            if (slides[i] === activatedSlide) slideIndex = i;
+
+            var container = $("<div></div>") 
+            container.css("transform-origin", "0% 0%");
+            container.css("transform", "scale(" + scale + ")");
+
+            var slide = slides[i].cloneNode(true);
+            $(slide).css("background-color", "rgb(255,255,255)");
+            $(slide).css("margin", "0");
+            $(slide).addClass("fullscreen");
+            container.append(slide);
+
+            var item = {};
+            item["html"] = container.wrap('<div/>').parent().html();
+            item["w"] = w*scale;
+            item["h"] = h*scale;
+            items[i] = item;
+        }
+
+        var options = {
+            history: false,
+            focus: false,
+            shareEl: false,
+            loop: false,
+            showAnimationDuration: 0,
+            hideAnimationDuration: 0,
+            timeToIdle: 1000
+        };
+    
+        var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, options);
+        gallery.init();
+        if (slideIndex > 0) gallery.goTo(slideIndex);
+        $(".pswp__button--fs").click();
+       
+        /*
         var container = document.getElementById("fullscreenContainer");
 
         if (!document.fullscreenElement && !document.mozFullScreenElement &&
@@ -1046,11 +1098,46 @@ var KoralInternal = {
             else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
 
             $(activatedSlide).removeClass("fullscreen");
-        }
+        }*/
     },
 
     slides: function()
     {
+        $("<div class='pswp' tabindex='-1' role='dialog' aria-hidden='true'>" +
+            "<div class='pswp__bg'></div>" +
+            "<div class='pswp__scroll-wrap'>" +
+                "<div class='pswp__container'>" +
+                    "<div class='pswp__item'></div>" +
+                    "<div class='pswp__item'></div>" +
+                    "<div class='pswp__item'></div>" +
+                "</div>" +
+                "<div class='pswp__ui pswp__ui--hidden'>" +
+                    "<div class='pswp__top-bar'>" +
+                        "<div class='pswp__counter'></div>" +
+                        "<button class='pswp__button pswp__button--close' title='Close (Esc)'></button>" +
+                        "<button class='pswp__button pswp__button--fs' title='Toggle fullscreen'></button>" +
+                        "<button class='pswp__button pswp__button--zoom' title='Zoom in/out'></button>" +
+                        "<div class='pswp__preloader'>" +
+                            "<div class='pswp__preloader__icn'>" +
+                              "<div class='pswp__preloader__cut'>" +
+                                "<div class='pswp__preloader__donut'></div>" +
+                              "</div>" +
+                            "</div>" +
+                        "</div>" +
+                    "</div>" +
+                    "<div class='pswp__share-modal pswp__share-modal--hidden pswp__single-tap'>" +
+                        "<div class='pswp__share-tooltip'></div>" +
+                    "</div>" +
+                    "<button class='pswp__button pswp__button--arrow--left' title='Previous (arrow left)'></button>" +
+                    "<button class='pswp__button pswp__button--arrow--right' title='Next (arrow right)'></button>" +
+                    "<div class='pswp__caption'>" +
+                        "<div class='pswp__caption__center'></div>" +
+                    "</div>" +
+                "</div>" +
+            "</div>" +
+        "</div>").appendTo($("body").first());
+
+        /*
         $("body").append($("<div style='margin:0;padding:0' id='fullscreenContainer'></div>"));
 
         function exitHandler()
@@ -1109,6 +1196,7 @@ var KoralInternal = {
                 }
             }
         });
+        */
     },
 
     toggleEditMode: function ()
