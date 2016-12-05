@@ -125,7 +125,7 @@ var KoralParagraph = function (dom)
 
     $(this.dom).appendTo(this.leftCol);
 
-    this.processContent = function ()
+    this.processContent = function (checkUpdate)
     {
         // rerender math
         MathJax.Hub.Queue(["Typeset", MathJax.Hub, this.leftCol.get(0)]);
@@ -133,10 +133,38 @@ var KoralParagraph = function (dom)
         // create plots
         KoralPlot.processPlots(this.leftCol.get(0));
 
-        if (this.leftCol.find("figure").length > 0 || this.leftCol.find(".equation"))
+        if (checkUpdate)
         {
-            KoralInternal.updateIDs();
+            if (this.leftCol.find("figure").length > 0 || this.leftCol.find(".equation").length > 0 || this.leftCol.find("a").length > 0)
+            {
+                KoralInternal.updateIDs();
+            }
+
+            if (this.leftCol.find(".references").length > 0)
+            {
+                KoralInternal.loadReferences();
+            }
         }
+
+
+
+        // syntax highlighting / prettify for code blocks
+        this.leftCol.find("pre").each(function (index, value)
+        {
+            if ($(this).find("code").length > 0)
+            {
+                $(this).toggleClass("prettyprint", true);
+                // external, needs to be async
+                setTimeout(function () {
+                    prettyPrint();
+                }, 2);
+            }
+        });
+
+        // slide
+        this.leftCol.find(".slide").click(function() {
+            KoralInternal.toggleFullScreen(this);
+        });
 
         this.leftCol.find("a").each(function (index, value)
         {
@@ -162,32 +190,7 @@ var KoralParagraph = function (dom)
                 }
             }
         });
-
-        if (this.leftCol.find(".references").length > 0)
-        {
-            KoralInternal.loadReferences();
-        }
-
-        // syntax highlighting / prettify for code blocks
-        this.leftCol.find("pre").each(function (index, value)
-        {
-            if ($(this).find("code").length > 0)
-            {
-                $(this).toggleClass("prettyprint", true);
-                // external, needs to be async
-                setTimeout(function () {
-                    prettyPrint();
-                }, 2);
-            }
-        });
-
-        // slide
-        this.leftCol.find(".slide").click(function() {
-            KoralInternal.toggleFullScreen(this);
-        });
     }
-
-    this.processContent();
 };
 
 var KoralArticle = function (article) {
@@ -195,6 +198,9 @@ var KoralArticle = function (article) {
     this.figureIDtoNumber = {};
     this.equationIDtoNumber = {};
     var that = this;
+
+    KoralInternal.updateIDs();
+    KoralInternal.loadReferences();
 
     var articleHtml = $("<div class='editTable'></div>");
     $(article).children().each(function ()
@@ -204,6 +210,11 @@ var KoralArticle = function (article) {
         that.paragraphs.push(p);
     });
     $(article).children().remove();
+
+    for (var i=0; i<this.paragraphs.length; i++)
+    {
+        this.paragraphs[i].processContent(false);
+    }
 
     var outer = $("<div class='article'></div>");
     articleHtml.appendTo(outer);
@@ -227,7 +238,7 @@ var KoralArticle = function (article) {
             paragraph.dom = d.get(0);
             paragraph.leftCol.children().remove();
             d.appendTo(paragraph.leftCol);
-            paragraph.processContent();
+            paragraph.processContent(true);
         } else
         {
             var newParagraphs = [];
