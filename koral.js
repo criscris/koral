@@ -118,8 +118,8 @@ var KoralParagraph = function (dom)
     this.domStr = $(dom).clone().wrap('<div/>').parent().html();
     this.domStr = this.domStr.replace(new RegExp("&quot;", 'g'), "'");
     this.row = $("<div class='editRow'></div>");
-    this.leftCol = $("<div class='editLeftCol'></div>"),
-            this.rightCol = $("<div class='editRightCol'></div>");
+    this.leftCol = $("<div class='editLeftCol'></div>");
+    this.rightCol = $("<div class='editRightCol'></div>");
     this.leftCol.appendTo(this.row);
     this.rightCol.appendTo(this.row);
 
@@ -139,13 +139,11 @@ var KoralParagraph = function (dom)
             {
                 KoralInternal.updateIDs();
             }
-
-            if (this.leftCol.find(".references").length > 0)
-            {
-                KoralInternal.loadReferences();
-            }
         }
-
+        if (this.leftCol.find(".references").length > 0)
+        {
+            KoralInternal.loadReferences(this.leftCol.find(".references"));
+        }
 
 
         // syntax highlighting / prettify for code blocks
@@ -200,7 +198,6 @@ var KoralArticle = function (article) {
     var that = this;
 
     KoralInternal.updateIDs();
-    KoralInternal.loadReferences();
 
     var articleHtml = $("<div class='editTable'></div>");
     $(article).children().each(function ()
@@ -211,14 +208,15 @@ var KoralArticle = function (article) {
     });
     $(article).children().remove();
 
+    var outer = $("<div class='article'></div>");
+    articleHtml.appendTo(outer);
+    outer.appendTo($(article));
+
     for (var i=0; i<this.paragraphs.length; i++)
     {
         this.paragraphs[i].processContent(false);
     }
 
-    var outer = $("<div class='article'></div>");
-    articleHtml.appendTo(outer);
-    outer.appendTo($(article));
 
     this.update = function (paragraph, newcode)
     {
@@ -876,7 +874,6 @@ var KoralInternal = {
         {
             KoralInternal.articles.push(new KoralArticle(value));
         });
-        KoralInternal.loadReferences();
         KoralInternal.addMenu();
         KoralInternal.slides();
     },
@@ -943,26 +940,28 @@ var KoralInternal = {
         });
     },
 
-    loadReferences: function () {
-        $("div.references").each(function (index, value)
+    loadReferences: function (domPart) {
+        var part = $(domPart);
+        part.empty();
+        var bibhtml = $("<ol></ol>").appendTo(part);
+
+        function parseBib(data)
         {
-            var bibhtml = $("<ol></ol>").appendTo($(this));
-
-            function parseBib(data)
+            var bibtex = new BibTex();
+            bibtex.content = data;
+            bibtex.parse();
+            bibIDtoBib = {};
+            for (var i = 0; i < bibtex.data.length; i++)
             {
-                var bibtex = new BibTex();
-                bibtex.content = data;
-                bibtex.parse();
-                bibIDtoBib = {};
-                for (var i = 0; i < bibtex.data.length; i++)
-                {
-                    var bib = bibtex.data[i];
-                    bibIDtoBib[bib.cite] = bib;
-                }
+                var bib = bibtex.data[i];
+                bibIDtoBib[bib.cite] = bib;
+            }
 
-                bibIDtoPosition = {};
-                usedBibs = [];
-                $("a").each(function (index, value)
+            bibIDtoPosition = {};
+            usedBibs = [];
+            $(".editLeftCol").each(function (index, value)
+            {
+                $(this).find("a").each(function (index, value)
                 {
                     var link = $(this).attr('href');
                     if (link == null)
@@ -986,45 +985,45 @@ var KoralInternal = {
                         $(this).text("[" + position + "]");
                     }
                 });
+            });
 
-                for (var i = 0; i < usedBibs.length; i++)
+            for (var i = 0; i < usedBibs.length; i++)
+            {
+                var bib = usedBibs[i];
+                var authors = "";
+                for (var j = 0; j < bib.author.length; j++)
                 {
-                    var bib = usedBibs[i];
-                    var authors = "";
-                    for (var j = 0; j < bib.author.length; j++)
+                    var a = bib.author[j];
+                    authors += a.first + " " + a.last;
+                    if (j < bib.author.length - 1)
                     {
-                        var a = bib.author[j];
-                        authors += a.first + " " + a.last;
-                        if (j < bib.author.length - 1)
-                        {
-                            if (j == bib.author.length - 2)
-                                authors += " and ";
-                            else
-                                authors += ", ";
-                        }
+                        if (j == bib.author.length - 2)
+                            authors += " and ";
+                        else
+                            authors += ", ";
                     }
-                    var journal = bib.journal != null ? bib.journal + "." : "";
-                    var refText = authors + " (" + bib.year + "): " + bib.title + ". " + journal;
-                    bibhtml.append("<li id='" + bib.cite + "'>" + refText + "</li>");
-
-                    // add tooltip to each link
-                    $("a[href='#" + bib.cite + "']").each(function (index, value)
-                    {
-                        $(this).attr("title", refText);
-                    });
                 }
-            }
+                var journal = bib.journal != null ? bib.journal + "." : "";
+                var refText = authors + " (" + bib.year + "): " + bib.title + ". " + journal;
+                bibhtml.append("<li id='" + bib.cite + "'>" + refText + "</li>");
 
-            var d = $(this).data("source");
-            if (d != null)
-            {
-                parseBib(d);
-            } else
-            {
-                var url = $(this).data("url");
-                jQuery.get(url, parseBib);
+                // add tooltip to each link
+                $("a[href='#" + bib.cite + "']").each(function (index, value)
+                {
+                    $(this).attr("title", refText);
+                });
             }
-        });
+        }
+
+        var d = part.data("source");
+        if (d != null)
+        {
+            parseBib(d);
+        } else
+        {
+            var url = part.data("url");
+            jQuery.get(url, parseBib);
+        }
     },
 
     toggleFullScreen: function(activatedSlide) {
