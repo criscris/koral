@@ -212,12 +212,6 @@ var KoralArticle = function (article) {
     articleHtml.appendTo(outer);
     outer.appendTo($(article));
 
-    for (var i=0; i<this.paragraphs.length; i++)
-    {
-        this.paragraphs[i].processContent(false);
-    }
-
-
     this.update = function (paragraph, newcode)
     {
         newcode = newcode.trim();
@@ -256,6 +250,14 @@ var KoralArticle = function (article) {
             this.paragraphs = this.paragraphs.slice(0, index).concat(newParagraphs).concat(this.paragraphs.slice(index + 1));
         }
     }
+
+    var that = this;
+    setTimeout(() => {
+        for (var i=0; i<that.paragraphs.length; i++)
+        {    
+            that.paragraphs[i].processContent(false);
+        }
+    }, 100); // give Koral.onload callbacks a chance to be called first
 };
 
 var KoralUI = {
