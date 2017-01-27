@@ -758,7 +758,9 @@ var KoralInternal = {
                     "lib/d3/d3.min.js", // online at https://d3js.org/d3.v3.min.js
                     "lib/codemirror/codemirror.js",
                     "lib/photoswipe/photoswipe.min.js", // online at https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.1/photoswipe.min.js
-                    "lib/photoswipe/photoswipe-ui-default.min.js"];
+                    "lib/photoswipe/photoswipe-ui-default.min.js",
+                    "lib/chance/chance.min.js" // online at http://chancejs.com/chance.min.js (version 1.0.4)
+                ];
         var scriptsSecondPass =
                 ["lib/codemirror/mode/xml/xml.js",
                     "lib/codemirror/mode/javascript/javascript.js",
