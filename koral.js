@@ -327,6 +327,37 @@ var KoralUI = {
         }, false);
     },
 
+    updateButton: function(onclick)
+    {
+        $("<div class='menuRight'>" +
+        "<div>" +
+        "<svg width='31px' height='31px'>" +
+        "<style>" +
+        ".updateButton { cursor:pointer; } " +
+        ".menuBR { fill:rgb(255,255,255); } " +
+        ".updateButton:hover .menuBR { fill:rgb(230,230,230); } " +
+        ".runArrow { fill:rgb(80,80,80); }" +
+        "</style>" +
+        "<g class='updateButton'>" +
+        "<rect width='31' height='31' class='menuBR'></rect>" +
+        "<path d='m 25.612314,15.5951 -8.861943,4.9902 -8.8619435,4.9902 0.1093523,-10.1698 0.1093522,-10.1697 8.752591,5.1795 z' class='runArrow'/>" +
+        "</g>" +
+        "</svg>" +
+        "</div>" +
+        "</div>").appendTo($("body").first());
+
+        $(".updateButton").on("click", function() {
+            onclick();
+            KoralUI.removeUpdateButton();
+        });
+    },
+
+    removeUpdateButton: function()
+    {
+        $(".menuRight").remove();
+    },
+
+
     drag: function (element, attachElement, lowerBound, upperBound, startCallback, moveCallback, endCallback, attachLater, boundCallback) {
         function hookEvent(element, eventName, callback)
         {
@@ -689,6 +720,7 @@ var KoralInternal = {
     originalDocument: null,
     articles: [],
     isEditMode: false,
+    modifiedEditors: new Set(),
     figureIDtoNumber: {},
     equationIDtoNumber: {},
 
@@ -914,12 +946,28 @@ var KoralInternal = {
                 },
                 "Ctrl-Enter": function (cm) {
                     cm.article.update(cm.paragraph, cm.getValue());
+                    KoralInternal.modifiedEditors.delete(cm);
+                    if (KoralInternal.modifiedEditors.size == 0) KoralUI.removeUpdateButton();
                 }
             }
         });
         codearea.article = article;
         codearea.paragraph = paragraph;
         $(paragraph.row).find(".editRightCol, .editLeftCol").toggleClass("stippledTop", true);
+        codearea.on("change", function(cm) {
+            if (KoralInternal.modifiedEditors.size == 0)
+            {
+                KoralUI.updateButton(function() 
+                {
+                    for (let cm of KoralInternal.modifiedEditors)
+                    {
+                        cm.article.update(cm.paragraph, cm.getValue());
+                    }
+                    KoralInternal.modifiedEditors = new Set();
+                });      
+            }
+            KoralInternal.modifiedEditors.add(cm);
+        });
     },
 
     updateIDs: function () {
