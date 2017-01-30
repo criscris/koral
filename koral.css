@@ -27,12 +27,12 @@ a:hover {
 	left:0;
 }
 
-.menuRight {
+.menu2 {
 	position: fixed; 
 	padding:0; 
 	margin:0; 
-	top:0; 
-	right:0;
+	top:32px; 
+	left:0;
 }
 
 .article {

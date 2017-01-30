@@ -282,7 +282,7 @@ var KoralUI = {
                 "</g>" +
                 "</svg>" +
                 "</div>" +
-                "<div id='mainMenu' style='visibility: hidden;'>" +
+                "<div id='mainMenu' style='display:none'>" + 
                 "<svg width='148' height='" + (entryHeight * entries.length) + "'>" +
                 "<style>" +
                 ".menuT { color: rgb(0,0,0); font-family: 'Arial'; font-size: 16px; } " +
@@ -319,17 +319,17 @@ var KoralUI = {
         }
 
         document.body.onclick = function (e) {
-            document.getElementById('mainMenu').style.visibility = 'hidden';
+            document.getElementById('mainMenu').style.display = 'none';
         }
         document.querySelector('.menuButton').addEventListener("click", function (e) {
-            document.getElementById('mainMenu').style.visibility = 'visible';
+            document.getElementById('mainMenu').style.display = ''; 
             e.stopPropagation();
         }, false);
     },
 
     updateButton: function(onclick)
     {
-        $("<div class='menuRight'>" +
+        $("<div class='menu2'>" +
         "<div>" +
         "<svg width='31px' height='31px'>" +
         "<style>" +
@@ -344,7 +344,7 @@ var KoralUI = {
         "</g>" +
         "</svg>" +
         "</div>" +
-        "</div>").appendTo($("body").first());
+        "</div>").insertBefore($(".menu"));
 
         $(".updateButton").on("click", function() {
             onclick();
@@ -354,7 +354,7 @@ var KoralUI = {
 
     removeUpdateButton: function()
     {
-        $(".menuRight").remove();
+        $(".menu2").remove();
     },
 
 
