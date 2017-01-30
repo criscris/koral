@@ -298,7 +298,7 @@ figure figcaption:before {
 	margin-bottom: 0.5rem;
 }
 
-table {
+article table {
 	font-size: 90%;
 	line-height: 1.1rem;
 	color: rgb(102,102,102);
@@ -306,36 +306,36 @@ table {
 	border-collapse: collapse;
 }
 
-table caption {
+article table caption {
 	text-align: left;
 }
 
-table th {
+article table th {
 	text-align: left;
 	border-bottom: 1px solid black;
 }
 
-table tr:last-child {
+article table tr:last-child {
 	 border-bottom: 1px solid black;
 }
 
 
-table th, table td {
+article table th, article > table td {
 	padding:0 0.5rem 0 0.5rem;
 }
 
-table th:first-child, 
-table th:last-child, 
-table td:first-child, 
-table td:last-child {
+article table th:first-child, 
+article table th:last-child, 
+article table td:first-child, 
+article table td:last-child {
   padding: 0;
 }
 
-table td.number {
+article table td.number {
 	 text-align: right;
 }
 
-table caption:before {
+article table caption:before {
 	content: 'Table ' counter(tables) ': ';
 	font-weight: 700;
 }
