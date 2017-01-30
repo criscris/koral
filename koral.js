@@ -244,6 +244,7 @@ var KoralArticle = function (article) {
                 p.row.insertBefore(paragraph.row);
                 KoralInternal.activateEditing(this, p);
                 newParagraphs.push(p);
+                p.processContent(true);
             }
             paragraph.row.remove();
             var index = this.paragraphs.indexOf(paragraph);
@@ -251,7 +252,6 @@ var KoralArticle = function (article) {
         }
     }
 
-    var that = this;
     setTimeout(() => {
         for (var i=0; i<that.paragraphs.length; i++)
         {    
