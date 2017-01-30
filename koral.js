@@ -923,10 +923,12 @@ var KoralInternal = {
             menuEntries.push({label: "Save and Commit", onclick: KoralInternal.commitOnServer});
             menuEntries.push({label: "History", onclick: KoralInternal.history});
         }
+        
+        menuEntries.push({label: "Navigate", onclick: KoralInternal.navigate});
         menuEntries.push({label: "Download HTML", onclick: KoralInternal.downloadHTML});
         menuEntries.push({label: "Print / PDF", onclick: KoralInternal.exportAsPDF});
         //menuEntries.push({ label:"Export as LaTeX", onclick: KoralInternal.exportAsLatex });
-
+        
         KoralUI.menu(menuEntries);
     },
 
@@ -1353,6 +1355,19 @@ var KoralInternal = {
                     return true;
                 }}];
         KoralUI.dialog("Save", p.get(0), buttons);
+    },
+    
+    navigate: function()
+    {
+    	var p = $("<div class='navigator'></div>");
+        $(".editLeftCol h2, .editLeftCol h3, .editLeftCol h4").each(function (index, value)
+        {
+        	$("<div></div>")
+        	.text($(this).text())
+        	.addClass(this.nodeName)
+        	.appendTo(p);
+        });	
+    	KoralUI.dialog("Navigate", p.get(0), []);
     },
 
     getDocumentLocal: function (callback)

@@ -383,6 +383,21 @@ svg .legendText {
 	font-size: 12px;
 }
 
+.navigator {
+	font-size: 0.8rem;
+	line-height: 1.3rem;
+}
+
+.navigator .H3 {
+	margin-left: 1rem;
+}
+
+.navigator .H4 {
+	margin-left: 2rem;
+}
+
+
+
 .infoMessage {
 	position: fixed;
 	top: 50%;
