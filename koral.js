@@ -1988,7 +1988,7 @@ var KoralPlot = {
                                 var y = e[colNames[drawConf.yData]];
                                 var normx = conf.xTransform(x);
                                 var normy = conf.yTransform(y);
-                                if (!isFinite(x) || !isFinite(y) || normx < 0 || normx > 1 || normy < 0 || normy > 1)
+                                if (!isFinite(x) || !isFinite(y) || !isFinite(normx) || !isFinite(normy) || normx < 0 || normx > 1 || normy < 0 || normy > 1)
                                 {
                                     startIndex++;
                                     break; // start new line
