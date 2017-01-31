@@ -304,6 +304,8 @@ article table {
 	color: rgb(102,102,102);
 	counter-increment: tables;
 	border-collapse: collapse;
+	margin-top: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 article table caption {
