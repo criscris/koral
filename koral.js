@@ -915,6 +915,25 @@ var KoralInternal = {
             KoralInternal.addMenu();
         }
         KoralInternal.slides();
+
+        var browser = $(".koralBrowser");
+        if (browser.length)
+        {
+            $.getJSON($("#files").attr("src"), function(data) 
+            {
+                for (var i=0; i<data.length; i++)
+                {
+                    var d = $("<div></div>")
+                    .addClass("entry")
+                    .appendTo(browser);
+                    
+                    $("<a></a>")
+                    .text(data[i].name)
+                    .attr("href", data[i].uri)
+                    .appendTo(d);
+                }
+            });
+        }
     },
 
     addMenu: function () {

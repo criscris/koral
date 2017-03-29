@@ -432,6 +432,11 @@ pre.prettyprint {
 	background-color: rgb(245,245,245);
 }
 
+.koralBrowser {
+	margin-top: 3rem;
+	margin-left: 2rem;
+}
+
 
 .koralCommitHistory .meta {
 	color: rgb(0,0,0);
