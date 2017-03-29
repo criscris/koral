@@ -433,7 +433,7 @@ pre.prettyprint {
 }
 
 
-.commithistory .meta {
+.koralCommitHistory .meta {
 	color: rgb(0,0,0);
 	font-family: "Arial";
 	margin-left: 0.5rem;
@@ -443,23 +443,23 @@ pre.prettyprint {
 	margin-top: 1rem;
 }
 
-.commithistory .content {
+.koralCommitHistory .content {
 	color: rgb(128,128,128);
 	font-family: monospace;
 	margin-left: 2rem;
 }
 
-.commithistory .change {
+.koralCommitHistory .change {
 	color: rgb(0,0,128);
 	font-family: monospace;
 	margin-left: 0.5rem;
 }
 
-.commithistory .plus {
+.koralCommitHistory .plus {
 	color: rgb(0,128,0);
 }
 
-.commithistory .minus {
+.koralCommitHistory .minus {
 	color: rgb(128,0,0);
 }
 

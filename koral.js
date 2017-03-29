@@ -910,7 +910,10 @@ var KoralInternal = {
         {
             KoralInternal.articles.push(new KoralArticle(value));
         });
-        KoralInternal.addMenu();
+        if ($("article").length)
+        {
+            KoralInternal.addMenu();
+        }
         KoralInternal.slides();
     },
 
@@ -1296,18 +1299,18 @@ var KoralInternal = {
 
     history: function ()
     {
-        window.open("/githistory?path=" + window.location.pathname, "_blank");
+        window.open(window.location.pathname + "?action=history", "_blank");
     },
 
     saveOnServer: function ()
     {
         KoralInternal.getDocumentLocal(function (str) {
             $.ajax({
-                type: "POST",
-                url: "/save?path=" + window.location.pathname,
+                type: "PUT",
+                url: window.location.pathname + "?action=fileCreationOrUpdate",
                 data: str,
                 success: function (data) {
-                    KoralUI.popup(data);
+                    KoralUI.popup("Saved successfully.");
                 },
                 dataType: "text"
             }).fail(function () {
@@ -1323,38 +1326,49 @@ var KoralInternal = {
             author = "";
 
         var p = $("<div></div>").addClass("form", true);
-        p.append($("<label for='authorField'>Author: </label>"));
-        var authorField = $("<input id='authorField' style='width:100%;' type='text'/>").val(author);
-        p.append(authorField);
+        //p.append($("<label for='authorField'>Author: </label>"));
+        //var authorField = $("<input id='authorField' style='width:100%;' type='text'/>").val(author);
+        //p.append(authorField);
         p.append($("<label for='messageField'>Commit message: </label>"));
         var messageField = $("<textarea id='messageField' rows='4' cols='40'/>");
         p.append(messageField);
 
         var buttons = [{name: "Save", onclickfunc: function ()
                 {
-                    author = authorField.val();
-                    author = author.trim();
-                    if (author.length > 0)
-                        Koral.setUrlParameter("author", author);
+                    //author = authorField.val();
+                    //author = author.trim();
+                    //if (author.length > 0)
+                    //    Koral.setUrlParameter("author", author);
                     var message = messageField.val();
 
                     KoralInternal.getDocumentLocal(function (str) {
                         $.ajax({
-                            type: "POST",
-                            url: "/commit?path=" + window.location.pathname + "&author=" + encodeURIComponent(author) + "&message=" + encodeURIComponent(message),
+                            type: "PUT",
+                            url: window.location.pathname + "?action=fileCreationOrUpdate",
                             data: str,
-                            success: function (data) {
-                                KoralUI.popup(data);
+                            success: function (data) 
+                            {
+                                KoralInternal.getDocumentLocal(function (str) {
+                                    $.ajax({
+                                        type: "POST",
+                                        url: window.location.pathname + "?action=commit&message=" + encodeURIComponent(message),
+                                        success: function (data) {
+                                            KoralUI.popup("Saved and committed.");
+                                        },
+                                        dataType: "text"
+                                    }).fail(function () {
+                                        KoralUI.popup("Committing failed.");
+                                    });
+                                });
                             },
                             dataType: "text"
                         }).fail(function () {
-                            KoralUI.popup("Saving and committing failed.");
+                            KoralUI.popup("Saving failed.");
                         });
                     });
-
                     return true;
                 }}];
-        KoralUI.dialog("Save", p.get(0), buttons);
+        KoralUI.dialog("Save and commit", p.get(0), buttons);
     },
     
     navigate: function()
