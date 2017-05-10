@@ -1579,11 +1579,18 @@ var KoralPlot = {
             var l = "";
             if (currentScale == 1) // main tick
             {
-                var ea = Math.abs(current10);
-                l = "10" + (current10 < 0 ? superscriptMinus : "") +
+                if (current10 == 0) l = "1";
+                else if (current10 == 1) l = "10";
+                if (current10 == -1) l = "0.1";
+                else if (current10 == -2) l = "0.01";
+                else
+                {
+                    var ea = Math.abs(current10);
+                    l = "10" + (current10 < 0 ? superscriptMinus : "") +
                         (ea >= 100 ? superscripts[(ea / 100) % 10] : "") +
                         (ea >= 10 ? superscripts[(ea / 10) % 10] : "") +
                         superscripts[ea % 10];
+                }
             }
             tickLabels.push(l);
 
