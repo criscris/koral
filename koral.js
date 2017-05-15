@@ -1581,7 +1581,7 @@ var KoralPlot = {
             {
                 if (current10 == 0) l = "1";
                 else if (current10 == 1) l = "10";
-                if (current10 == -1) l = "0.1";
+                else if (current10 == -1) l = "0.1";
                 else if (current10 == -2) l = "0.01";
                 else
                 {
