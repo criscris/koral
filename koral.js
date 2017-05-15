@@ -222,7 +222,7 @@ var KoralArticle = function (article) {
             return;
         }
 
-        var d = $(newcode.replace(new RegExp("'", 'g'), "&quot;"));
+        var d = $(newcode); // newcode.replace(new RegExp("'", 'g'), "&quot;"); no longer an issue?
 
         if (d.length <= 1)
         {
