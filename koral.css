@@ -87,7 +87,11 @@ a:hover {
   resize: none;
 }
 
-.CodeMirror {
+.viewer .CodeMirror {
+  height: 100%;
+}
+
+.koral .CodeMirror {
   height: 100%;
   margin-left:1rem;
 }
@@ -432,11 +436,21 @@ pre.prettyprint {
 	background-color: rgb(245,245,245);
 }
 
-.koralBrowser {
-	margin-top: 3rem;
-	margin-left: 2rem;
+.koralExplorer {
+	display: table;
+	width: 100%;
 }
 
+.koralExplorer .browser {
+	display: table-cell;
+  	width: 400px;
+  	padding-left: 1rem;
+}
+
+.koralExplorer .viewer {
+  	display: table-cell;
+  	padding-left: 2rem;
+}
 
 .koralCommitHistory .meta {
 	color: rgb(0,0,0);

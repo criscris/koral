@@ -109,6 +109,17 @@ var Koral = {
             newQueryString += param + "=" + value + "&";
         }
         window.history.replaceState("", "", urlObject[0] + newQueryString.slice(0, -1));
+    },
+
+    loadCSV: function(url, callback)
+    {
+        $.ajax({
+            url: url,
+        }).done(data =>
+        {
+            var csv = Papa.parse(data, {header: true, skipEmptyLines: true});
+            callback(csv.data);
+        });
     }
 };
 
@@ -143,6 +154,10 @@ var KoralParagraph = function (dom)
         if (this.leftCol.find(".references").length > 0)
         {
             KoralInternal.loadReferences(this.leftCol.find(".references"));
+        }
+        if (this.leftCol.find(".sources").length > 0)
+        {
+            KoralInternal.loadSources(this.leftCol.find(".sources"));
         }
 
 
@@ -750,6 +765,7 @@ var KoralInternal = {
             "lib/code-prettify/prettify.css",
             "lib/photoswipe/photoswipe.min.css",
             "lib/photoswipe/default-skin.min.css",
+            "lib/jstree/style.min.css",
             "koral.css"];
         for (var i = 0; i < css.length; i++)
         {
@@ -790,7 +806,7 @@ var KoralInternal = {
                     "lib/papaparse/papaparse.min.js",
                     "lib/code-prettify/prettify.js",
                     "lib/d3/d3.min.js", // online at https://d3js.org/d3.v3.min.js
-                    "lib/codemirror/codemirror.js",
+                    "lib/codemirror/codemirror.js", // 5.25.2
                     "lib/photoswipe/photoswipe.min.js", // online at https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.1/photoswipe.min.js
                     "lib/photoswipe/photoswipe-ui-default.min.js",
                     "lib/chance/chance.min.js" // online at http://chancejs.com/chance.min.js (version 1.0.4)
@@ -800,7 +816,12 @@ var KoralInternal = {
                     "lib/codemirror/mode/javascript/javascript.js",
                     "lib/codemirror/mode/css/css.js",
                     "lib/codemirror/mode/htmlmixed/htmlmixed.js",
-                    "lib/codemirror/addon/display/fullscreen.js"];
+                    "lib/codemirror/mode/python/python.js",
+                    "lib/codemirror/mode/r/r.js",
+                    "lib/codemirror/mode/octave/octave.js",
+                    "lib/codemirror/addon/display/fullscreen.js",
+                    "lib/jstree/jstree.min.js" // 3.3.4
+                ];
 
         // html dom needs to be loaded completely && all external scripts are loaded before we continue
         window[addEventListener ? 'addEventListener' : 'attachEvent'](addEventListener ? 'load' : 'onload', loadCallback);
@@ -915,23 +936,185 @@ var KoralInternal = {
             KoralInternal.addMenu();
         }
         KoralInternal.slides();
+        KoralInternal.addBrowser();
+        KoralInternal.addFileViewer();
+    },
 
-        var browser = $(".koralBrowser");
+    addBrowser: function() {
+        var fileSizeLabel = size => {
+            s = size;
+            var ext = ["", "k", "M", "G", "T"];
+            var i=0;
+            for (; i<ext.length; i++)
+            {
+                if (s < 1000) break;
+                s = s / 1000.0;
+            }
+            s = Math.round(s * 100) / 100;
+            return s + ext[i];
+        };
+        var d2 = val => ('0' + val).substr(-2);
+        var fileDateLabel = timestamp => {
+            var date = new Date(timestamp);
+            var y = "" + date.getFullYear();
+            var m = d2(date.getMonth()+1);
+            var d = d2(date.getDate());
+            var H = d2(date.getHours());
+            var M = d2(date.getMinutes());
+            var S = d2(date.getSeconds());
+            return y + "/" + m + "/" + d + " " + H + ":" + M + ":" + S; 
+        }
+
+
+        var browser = $(".browser");
         if (browser.length)
         {
+            var path = window.location.pathname;
+            var i1 = window.location.pathname.lastIndexOf("/");
+            path = path.substring(0, i1 + 1);
+            $("<h3></h3>")
+            .appendTo(browser)
+            .text(path);
+
+            var p = path.substring(0, path.length - 1);
+            i1 = p.lastIndexOf("/");
+            if (i1 > 0)
+            {
+                $("<a></a>")
+                .css("margin-left", "1.5rem")
+                .appendTo(browser)
+                .text("[...]")
+                .attr("href", p.substring(0, i1 + 1));
+            }
+
             $.getJSON($("#files").attr("src"), function(data) 
             {
+                if (!data || data.length == 0) return;
+
+                var tree = $("<div></div>").appendTo(browser);
+                var ul_ = $("<ul></ul>").appendTo(tree);
+
+                function addFileEntry(ul, entry, parentPath, level)
+                {
+                    var li = $("<li></li>").appendTo(ul);
+
+                    var row = $("<div></div>")
+                    .css("display", "table")
+                    .appendTo(li);
+                    
+                    var w = level == 0 ? "240px" : "calc(240px - " + (1.5*level) + "rem)";
+                    var col1 = $("<div></div>")
+                    .css("display", "table-cell")
+                    .css("width", w)
+                    .css("min-width", w)
+                    .css("max-width", w)
+                    .css("white-space", "nowrap")
+                    .css("overflow", "hidden")
+                    .css("text-overflow", "ellipsis")
+                    .appendTo(row);
+
+                    $("<a></a>")
+                    .appendTo(col1)
+                    .attr("href", parentPath + (entry.files ? entry.name : entry.name + "?action=edit"))
+                    .text(entry.name)
+                    .attr("title", entry.name);
+
+                    if (!entry.files)
+                    {
+                        $("<div></div>")
+                        .css("display", "table-cell")
+                        .css("width", "40px")
+                        .appendTo(row)
+                        .css("margin-right", "1rem")
+                        .css("font-family", "monospace")
+                        .css("text-align", "right")
+                        .text(fileSizeLabel(entry.size));
+
+                        $("<div></div>")
+                        .css("display", "table-cell")
+                        .css("width", "140px")
+                        .appendTo(row)
+                        .css("margin-left", "1.5rem")
+                        .css("font-family", "monospace")
+                        .css("text-align", "right")
+                        .text(fileDateLabel(entry.lastModified));
+                    }
+
+                    if (entry.files)
+                    {
+                        var ulChild = $("<ul></ul>").appendTo(li);
+                        for (var i=0; i<entry.files.length; i++)
+                        {
+                            addFileEntry(ulChild, entry.files[i], parentPath + entry.name, level + 1);
+                        }
+                    }
+                }
+
                 for (var i=0; i<data.length; i++)
                 {
-                    var d = $("<div></div>")
-                    .addClass("entry")
-                    .appendTo(browser);
-                    
-                    $("<a></a>")
-                    .text(data[i].name)
-                    .attr("href", data[i].uri)
-                    .appendTo(d);
+                    addFileEntry(ul_, data[i], "", 0);
                 }
+
+                tree.jstree({
+                    "core": {
+                        "themes":{
+                            "icons":false,
+                            "dots":false
+                        }
+                    }
+                }).bind("select_node.jstree", function (e, data) {
+                    if (data.event.target.href) window.location = data.event.target.href;
+                });
+            });
+        }
+    },
+
+    addFileViewer: function() {
+        var viewer = $(".viewer");
+        if (viewer.length && viewer.data("url"))
+        {
+            var header = 
+            $("<div></div>")
+            .appendTo(viewer)
+            .css("margin-bottom", "1rem");
+
+            var path = window.location.pathname;
+            var i1 = window.location.pathname.lastIndexOf("/");
+            path = path.substring(i1 + 1);
+            $("<h3></h3>")
+            .css("display", "inline")
+            .appendTo(header)
+            .text(path);
+
+            $("<a></a>")
+            .css("display", "inline")
+            .css("margin-left", "2rem")
+            .appendTo(header)
+            .text(path.toUpperCase().endsWith(".HTML") ? "View" : "Download")
+            .attr("href", window.location.pathname);
+
+            $.ajax({
+                url: viewer.data("url"),
+                dataType: "text"
+            }).done(function(data) 
+            {
+                var maxLines = 5000;
+                var lines = data.split("\n");
+                if (lines.length > maxLines)
+                {
+                    lines = lines.slice(0, maxLines);
+                    lines.push("[..]");
+                    lines.push("Content display limited to first " + maxLines + " lines.");
+                }
+                var text = lines.join("\n");
+
+                var codearea = CodeMirror(viewer.get(0), {
+                    value: text,
+                    lineNumbers: true,
+                    lineWrapping: true,
+                    indentWithTabs: true,
+                    indentUnit: 4,
+                    readOnly:true });
             });
         }
     },
@@ -959,6 +1142,8 @@ var KoralInternal = {
             value: paragraph.domStr,
             lineNumbers: true,
             lineWrapping: true,
+            indentWithTabs: true,
+            indentUnit: 4,
             mode: "htmlmixed",
             extraKeys: {
                 "F11": function (cm) {
@@ -1099,6 +1284,144 @@ var KoralInternal = {
         {
             var url = part.data("url");
             jQuery.get(url, parseBib);
+        }
+    },
+
+    loadSources: function (domPart) {
+        var part = $(domPart);
+        part.empty();
+        var tree = $("<div></div>").appendTo(part);
+        var ul_ = $("<ul></ul>").appendTo(tree);
+
+        function sourceFile(sourceDesc)
+        {
+            if (sourceDesc.func == null) return null;
+            if (sourceDesc.env && sourceDesc.env.toUpperCase() === "JAVA")
+            {
+                var i1 = sourceDesc.func.lastIndexOf(".");
+                var i2 = sourceDesc.func.indexOf(":");
+                if (i1 == -1 || i2 == -1) return null;
+                return { "name": sourceDesc.func.substring(i1 + 1, i2) + ".java", 
+                         "url": "src/main/java/" + sourceDesc.func.substring(0, i2).split(".").join("/") + ".java" };
+            }
+
+            var i1 = sourceDesc.func.lastIndexOf("/");
+            if (i1 == -1) i1 = 0; 
+            var i2 = sourceDesc.func.indexOf(":");
+            if (i2 == -1) return null;
+            return { "name": sourceDesc.func.substring(i1 + 1, i2),
+                     "url": sourceDesc.func.substring(0, i2)};
+        }
+
+        function addTo(ul, url, desc, sourceMap)
+        {
+            var name = url;
+            var i1 = name.lastIndexOf("/");
+            if (i1 != -1) name = name.substring(i1 + 1);
+
+            var li = $("<li></li>").appendTo(ul);
+
+            var row = $("<span></span>").appendTo(li);
+            $("<a></a>")
+            .appendTo(row)
+            .attr("href", url + "?action=edit")
+            .text(name);
+
+            var func = sourceFile(desc);
+            if (func)
+            {
+                $("<span> ← </span>").appendTo(row);
+                $("<a></a>")
+                .appendTo(row)
+                .attr("href", func.url + "?action=edit")
+                .text(func.name);
+            }
+
+            if (desc.args != null)
+            {
+                var sources = [];
+                for (var s in desc.args)
+                {
+                    if (desc.args[s].type != null 
+                        && desc.args[s].type.toUpperCase() === "SOURCE" 
+                        && desc.args[s].val != null)
+                    {
+                        sources.push(s);
+                    }
+                }
+
+                if (sources.length > 0)
+                {
+                    var ul = $("<ul></ul>").appendTo(li);
+                    for (var i=0; i<sources.length; i++)
+                    {
+                        var arg = desc.args[sources[i]];
+                        var url_ = arg.val;
+                        var desc_ = sourceMap[url_];
+                        if (desc_ == null) continue;
+
+                        addTo(ul, url_, desc_, sourceMap);
+                    }
+                }
+            }
+        }
+
+        function parseSrc(sourceMap)
+        {
+            var sourceIDtoIndex = {};
+            var usedSources = [];
+            $(".editLeftCol").each(function (i, v)
+            {
+                // find references to sources in text
+                $(this).find("[data-url]").each(function (index, value)
+                {
+                    var url = $(this).data("url");
+                    if (url == null) return;
+                    if (sourceMap[url] != null)
+                    {
+                        var position = sourceIDtoIndex[url];
+                        if (position == null)
+                        {
+                            position = usedSources.length;
+                            usedSources[position] = url;
+                            sourceIDtoIndex[url] = position;
+                        }
+                    }
+                });
+            });
+
+            // resolved sources
+            for (var i=0; i<usedSources.length; i++)
+            {
+                var url = usedSources[i];
+                var desc = sourceMap[url];
+                addTo(ul_, url, desc, sourceMap);
+            }
+
+            tree.jstree({
+                "core": {
+                    "themes":{
+                        "icons":false,
+                        "dots":false
+                    }
+                }
+            }).bind("select_node.jstree", function (e, data) {
+                if (data.event.target.href && 
+                    !data.event.target.href.endsWith("#")) // jstree internal link 
+                {
+                    window.open(data.event.target.href);
+                }
+            });
+        }
+
+        var d = part.data("source");
+        if (d != null)
+        {
+            parseSrc(d);
+        } else
+        {
+            var url = part.data("url");
+            jQuery.get(url, parseSrc);
         }
     },
 
@@ -1540,7 +1863,7 @@ var KoralPlot = {
         shape: "circle", // for points. choices: circle, rect
         realSize: undefined, // [1,1] width and height in data space
         colorMapper: undefined, // [0, 100], ["rgb(0,0,255)", "rgb(255,0,0)"]
-        colorLegend: undefined, // { "label":"citations, "vert":0, "horiz":1 }
+        colorLegend: undefined, // { "label":"mylabel", "vert":0, "horiz":1 }
     },
 
     logTicks: function (min, max) {
@@ -1868,47 +2191,51 @@ var KoralPlot = {
                 //svg.append("rect").attr("style", "fill:none;stroke:#000000;stroke-width:1px;").attr("stroke-dasharray", "5,5").attr("x", -conf.left + 12).attr("y", -conf.top + 12).attr("width", width - 24).attr("height", height - 24);
 
 
-                svg.append("rect").classed("plotStroke", true).attr("x", -conf.plotMargin).attr("y", -conf.plotMargin)
+                if (conf.plotBorder) svg.append("rect").classed("plotStroke", true).attr("x", -conf.plotMargin).attr("y", -conf.plotMargin)
                         .attr("width", (conf.plotWidth + 2 * conf.plotMargin)).attr("height", (conf.plotHeight + 2 * conf.plotMargin));
-                svg.append("text").text(conf.xLabel).classed("plotText axis", true).attr("x", conf.plotWidth / 2.0).attr("y", conf.plotHeight + 52).attr("text-anchor", "middle");
-                svg.append("text").text(conf.yLabel).classed("plotText axis", true).attr("text-anchor", "middle").attr("x", 0).attr("y", 0)
+                if (conf.xLabel) svg.append("text").text(conf.xLabel).classed("plotText axis", true).attr("x", conf.plotWidth / 2.0).attr("y", conf.plotHeight + 52).attr("text-anchor", "middle");
+                if (conf.yLabel) svg.append("text").text(conf.yLabel).classed("plotText axis", true).attr("text-anchor", "middle").attr("x", 0).attr("y", 0)
                         .attr("transform", "translate(" + (-41) + "," + (conf.plotHeight / 2) + ") rotate(-90)");
 
 
-                var xaxis = svg.append("g").attr("transform", "translate(0 " + (conf.plotHeight + conf.plotMargin) + ")");
-                for (var i = 0; i < conf.xTicks.length; i++)
+                if (conf.plotBorder)
                 {
-                    var tick = conf.xTicks[i];
-                    var label = conf.xTickLabels[i];
-
-                    var norm = conf.xTransform(tick);
-                    var screen = norm * conf.plotWidth;
-
-                    var tl = label != null && label.length > 0 ? conf.tickHalfLength : conf.tickHalfLengthSmall;
-                    xaxis.append("line").classed("plotStroke", true).attr("x1", screen).attr("x2", screen).attr("y1", -tl).attr("y2", tl);
-
-                    if (label != null && label.length > 0)
+                    var xaxis = svg.append("g").attr("transform", "translate(0 " + (conf.plotHeight + conf.plotMargin) + ")");
+                    for (var i = 0; i < conf.xTicks.length; i++)
                     {
-                        xaxis.append("text").text(label).classed("plotText tick", true).attr("text-anchor", "middle").attr("x", screen).attr("y", 18);
+                        var tick = conf.xTicks[i];
+                        var label = conf.xTickLabels[i];
+
+                        var norm = conf.xTransform(tick);
+                        var screen = norm * conf.plotWidth;
+
+                        var tl = label != null && label.length > 0 ? conf.tickHalfLength : conf.tickHalfLengthSmall;
+                        xaxis.append("line").classed("plotStroke", true).attr("x1", screen).attr("x2", screen).attr("y1", -tl).attr("y2", tl);
+
+                        if (label != null && label.length > 0)
+                        {
+                            xaxis.append("text").text(label).classed("plotText tick", true).attr("text-anchor", "middle").attr("x", screen).attr("y", 18);
+                        }
                     }
-                }
-                var yaxis = svg.append("g").attr("transform", "translate(" + (-conf.plotMargin) + "," + conf.plotHeight + ") rotate(-90)");
-                for (var i = 0; i < conf.yTicks.length; i++)
-                {
-                    var tick = conf.yTicks[i];
-                    var label = conf.yTickLabels[i];
-
-                    var norm = conf.yTransform(tick);
-                    var screen = norm * conf.plotHeight;
-
-                    var tl = label != null && label.length > 0 ? conf.tickHalfLength : conf.tickHalfLengthSmall;
-                    yaxis.append("line").classed("plotStroke", true).attr("x1", screen).attr("x2", screen).attr("y1", -tl).attr("y2", tl);
-
-                    if (label != null && label.length > 0)
+                    var yaxis = svg.append("g").attr("transform", "translate(" + (-conf.plotMargin) + "," + conf.plotHeight + ") rotate(-90)");
+                    for (var i = 0; i < conf.yTicks.length; i++)
                     {
-                        yaxis.append("text").text(label).classed("plotText tick", true).attr("text-anchor", "middle").attr("x", screen).attr("y", -8);
-                    }
+                        var tick = conf.yTicks[i];
+                        var label = conf.yTickLabels[i];
+
+                        var norm = conf.yTransform(tick);
+                        var screen = norm * conf.plotHeight;
+
+                        var tl = label != null && label.length > 0 ? conf.tickHalfLength : conf.tickHalfLengthSmall;
+                        yaxis.append("line").classed("plotStroke", true).attr("x1", screen).attr("x2", screen).attr("y1", -tl).attr("y2", tl);
+
+                        if (label != null && label.length > 0)
+                        {
+                            yaxis.append("text").text(label).classed("plotText tick", true).attr("text-anchor", "middle").attr("x", screen).attr("y", -8);
+                        }
+                    }                    
                 }
+
 
                 $(this).find("g[data-url]").each(function (i, v)
                 {
@@ -2102,7 +2429,11 @@ var KoralPlot = {
                         sb.push(" Z");
                         g.append("path").attr("d", sb.join("")).attr("style", "fill:" + drawConf.color + "; stroke:none");
                     }
+                });
 
+                $(this).find("g[data-config]").each(function (i, v)
+                {
+                    var drawConf = Koral.getJsonDataAttribute(this, "config", KoralPlot.plotDrawDefaults);
                     if (drawConf.colorLegend && drawConf.colorMapper)
                     {
                         var g = svg.append("g");
@@ -2153,14 +2484,12 @@ var KoralPlot = {
                         legendIndex++;
                     }
 
-                    $(this).find("g[data-url]").each(function (i, v)
+                    $(this).find("g[data-config]").each(function (i, v)
                     {
-                        var url = $(this).data("url");
-
                         var drawConf = Koral.getJsonDataAttribute(this, "config", KoralPlot.plotDrawDefaults);
 
 
-                        if (drawConf.label != null && (drawConf.type === "points" || drawConf.type === "line"))
+                        if (drawConf.label != null && (drawConf.type === "points" || drawConf.type === "line" || drawConf.type === "cross"))
                         {
                             gl.append("text").text(drawConf.label).classed("plotText legendText", true).attr("x", 24).attr("y", lineHeight * legendIndex + 16);
 
@@ -2168,9 +2497,15 @@ var KoralPlot = {
                             if (drawConf.type === "points")
                             {
                                 gl.append("circle").attr("fill", drawConf.color).attr("r", drawConf.size).attr("cx", 12).attr("cy", y);
-                            } else if (drawConf.type === "line")
+                            } 
+                            else if (drawConf.type === "line")
                             {
                                 gl.append("path").attr("d", "M5 " + y + " L19 " + y).attr("style", "fill:none; stroke:" + drawConf.color + "; stroke-width:" + drawConf.size + "px");
+                            }
+                            else if (drawConf.type === "cross")
+                            {
+                                gl.append("path").attr("d", "M9 " + y + " L15 " + y).attr("style", "fill:none; stroke:" + drawConf.color + "; stroke-width:" + drawConf.size + "px");
+                                gl.append("path").attr("d", "M12 " + (y-3) + " L12 " + (y+3)).attr("style", "fill:none; stroke:" + drawConf.color + "; stroke-width:" + drawConf.size + "px");
                             }
 
                             legendIndex++;
