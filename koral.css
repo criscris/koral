@@ -1,0 +1,574 @@
+body {
+	background: rgb(255,255,255);
+	color: rgb(51,51,51);
+    font-family: "Arial";
+   /* font-size: 100%; */
+    margin:0px;
+
+    font-size: 0.81rem;
+	counter-reset: figures equations tables;
+	line-height: 1.15rem;
+}
+
+a, a:link, a:visited, a:active  {
+	text-decoration: none;
+    color: rgb(25,121,202);
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.menu {
+	position: fixed; 
+	padding:0; 
+	margin:0; 
+	top:0; 
+	left:0;
+}
+
+.menu2 {
+	position: fixed; 
+	padding:0; 
+	margin:0; 
+	top:32px; 
+	left:0;
+}
+
+.article {
+	margin-left: 2rem;
+	margin-right: 2rem;
+}
+
+.editTable {
+  display:table;
+  width:100%;
+  margin: 0;
+  border:0;
+  padding:0;
+}
+
+.editRow {
+  display:table-row;
+  padding:0;
+  margin:0;
+}
+
+.editLeftCol {
+  display: table-cell;
+  width: 40rem;  /* 640px;*/
+  vertical-align: top;
+}
+
+.editRightCol {
+  display:table-cell;
+  vertical-align:top;
+}
+
+.p {
+	margin:0;
+}
+
+.stippledTop {
+  border-width: 1px 0 0 0;
+  border-style: dashed none none none;
+}
+
+.editArea {
+  width:90%;
+  height:100%;
+  
+  border: none;
+  overflow: auto;
+  outline: none;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+  resize: none;
+}
+
+.viewer .CodeMirror {
+  height: 100%;
+}
+
+.koral .CodeMirror {
+  height: auto;
+  margin-left:1rem;
+}
+
+.dialogBg {
+  position:fixed;
+  width:100%;
+  height:100%;
+  top:0px;
+  left:0px;
+  opacity:0.12;
+  background-color:rgb(0, 0, 0);
+  z-index:100;
+}
+
+.dialogWindow {
+  background-color:rgb(255,255,255);
+  opacity:1;
+  z-index: 101;
+}
+
+.dialogTitle {
+  background-color:rgb(255,255,255);
+  font-size: 80%;
+  font-weight:700;
+  opacity:1;
+  cursor:move;
+  padding-top:5px;
+  padding-bottom:5px;
+  padding-left:5px;
+  padding-right:5px;
+}
+
+.dialogContent {
+  padding-top:12px;
+  padding-left:12px;
+  padding-bottom:24px;
+  padding-right:12px;
+  font-size: 80%;
+}
+
+.dialogAction {
+  background-color:rgb(255,255,255);
+  padding-left:6px;
+  padding-right:6px;
+  padding-top:6px;
+  padding-bottom:6px;
+  margin-bottom:12px;
+  margin-right:12px;
+  font-size: 100%;
+  cursor:pointer;
+}
+
+.dialogAction:hover {
+  background-color:rgb(230,230,230);
+}
+
+.form > input, textarea, label {
+    display:block;
+}
+
+.form > label:not(:first-child) {
+   margin-top: 1rem;
+}
+
+.form > input {
+  box-sizing: border-box;
+}
+
+.form > textarea {
+  font-family: inherit;
+  font-size: inherit;
+  box-sizing: border-box;
+}
+
+/*
+article > p, div.equation, ol, h2, h3, h4, figure {
+	margin-left: 10%;
+}
+
+article > p, div.equation, ol, h2, h3, h4 {
+	width: 36rem;
+}
+
+article > figure > figcaption {
+	width: 36rem;
+}
+*/
+
+/*
+p + p {
+	text-indent: 1em;
+}
+
+p .continued {
+	text-indent: 0em;
+}
+
+p .newp {
+	text-indent: 1em;
+}*/
+
+
+p {
+	-webkit-margin-before:0;
+    -webkit-margin-after:0;
+    margin-top:0.2rem;
+    margin-bottom:0.8rem;
+}
+
+h4 {
+	
+	font-size: 100%;
+	line-height: 115%;
+	font-weight: 700;
+
+	-webkit-margin-before:0;
+    -webkit-margin-after:0;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+h3 {
+	font-size: 150%;
+	line-height: 115%;
+	font-weight: normal;
+
+	-webkit-margin-before:0;
+    -webkit-margin-after:0;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+h2 {
+	font-size: 225%;
+	line-height: 115%;
+	font-weight: normal;
+
+	-webkit-margin-before:0;
+    -webkit-margin-after:0;
+    margin-top: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.summary {
+	line-height: 1.15rem;
+	font-weight: 700;
+}
+
+
+figure {
+	font-size: 90%;
+	line-height: 1.1rem;
+	color: rgb(102,102,102);
+	counter-increment: figures;
+
+	-webkit-margin-before: 0;
+    -webkit-margin-after: 0;
+    -webkit-margin-start: 0;
+    -webkit-margin-end: 0;
+
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    margin-left:0;
+    margin-right:0;
+}
+
+
+figcaption {
+	text-align: left;
+}
+
+figcaption .main,
+caption .main {
+	font-weight: 700;
+}
+
+figure figcaption:before {
+	content: 'Fig. ' counter(figures) ': ';
+	font-weight: 700;
+}
+
+.equation {
+	counter-increment: equations;
+	display: flex; 
+	justify-content: space-between;
+}
+
+@media only screen and (max-width: 40rem) {
+	.equation {
+		max-width: 90vw;
+	}
+}
+
+.equation:after {
+	content: '(' counter(equations) ')';
+	line-height:200%;
+}
+
+
+
+.table { display: table; }
+.row { display: table-row; }
+.cell { display: table-cell; }
+
+.reference {
+	line-height: 1.15rem;
+	margin-bottom: 0.5rem;
+}
+
+article table {
+	font-size: 90%;
+	line-height: 1.1rem;
+	color: rgb(102,102,102);
+	counter-increment: tables;
+	border-collapse: collapse;
+	margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+article table caption {
+	text-align: left;
+}
+
+article table th {
+	text-align: left;
+	border-bottom: 1px solid black;
+}
+
+article table tr:last-child {
+	 border-bottom: 1px solid black;
+}
+
+
+article table th, article > table td {
+	padding:0 0.5rem 0 0.5rem;
+}
+
+article table th:first-child, 
+article table th:last-child, 
+article table td:first-child, 
+article table td:last-child {
+  padding: 0;
+}
+
+article table td.number {
+	 text-align: right;
+}
+
+article table caption:before {
+	content: 'Table ' counter(tables) ': ';
+	font-weight: 700;
+}
+
+svg .plotStroke {
+	fill:none;
+	stroke:rgb(0, 0, 0);
+	stroke-width:1px;
+}
+
+svg .plotText {
+	font-weight:normal;
+	font-family:'Arial';
+	fill:rgb(0,0,0);
+}
+
+svg .figureLetter {
+	font-weight: 700;
+	font-family:'Arial';
+	fill:rgb(0,0,0);
+	font-size: 16px;
+}
+
+svg .axis {
+	font-size: 16px;
+}
+
+svg .tick {
+	font-size: 13px;
+}
+
+svg .legendBox {
+	fill:none;
+	stroke:rgb(0, 0, 0);
+	stroke-width:1px;
+}
+
+svg .colorLegendBox {
+	fill:rgba(255,255,255,0.8);
+	stroke:rgb(0, 0, 0);
+	stroke-width:1px;
+}
+
+svg .legendText {
+	font-size: 12px;
+}
+
+.navigator {
+	font-size: 0.8rem;
+	line-height: 1.3rem;
+}
+
+.navigator .H3 {
+	margin-left: 1rem;
+}
+
+.navigator .H4 {
+	margin-left: 2rem;
+}
+
+
+
+.infoMessage {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	width: 50%;
+	max-width: 300px;
+	min-width: 200px;
+	height: auto;
+	z-index: 2000;
+	transform: translateX(-50%) translateY(-50%);
+    background-color: rgb(240,240,240);
+    border-width: 2px;
+  	border-style: dashed;
+  	animation: opacFX 3s;
+}
+
+.infoMessageContent {
+	margin:1.5rem;
+}
+
+@keyframes opacFX {
+    0%   { opacity:0; }
+    25%  { opacity:1; }
+    75%  { opacity:1; }
+    100% { opacity:0; }
+}
+
+pre.prettyprint {
+	border: 0;
+	background-color: rgb(245,245,245);
+}
+
+.koralExplorer {
+	display: table;
+	width: 100%;
+}
+
+.koralExplorer .browser {
+	display: table-cell;
+  	width: 400px;
+  	padding-left: 1rem;
+}
+
+.koralExplorer .viewer {
+  	display: table-cell;
+  	padding-left: 2rem;
+}
+
+.koralCommitHistory .meta {
+	color: rgb(0,0,0);
+	font-family: "Arial";
+	margin-left: 0.5rem;
+}
+
+.content + .meta {
+	margin-top: 1rem;
+}
+
+.koralCommitHistory .content {
+	color: rgb(128,128,128);
+	font-family: monospace;
+	margin-left: 2rem;
+}
+
+.koralCommitHistory .change {
+	color: rgb(0,0,128);
+	font-family: monospace;
+	margin-left: 0.5rem;
+}
+
+.koralCommitHistory .plus {
+	color: rgb(0,128,0);
+}
+
+.koralCommitHistory .minus {
+	color: rgb(128,0,0);
+}
+
+.slide {
+	border:1px solid rgb(0,0,0);
+	width:640px;
+	height:360px;
+	padding:1rem;
+	margin-top:1rem;
+	position: relative;
+	box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.slide figure {
+	transform-origin: 0% 0%;
+	transform: scale(0.8);
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+.slide h2 {
+	margin-top: 0rem;
+	margin-bottom: 1.5rem;
+	font-size: 130%;
+}
+
+.slide figure div {
+	 margin: 0;
+	 padding: 0;
+	 -webkit-margin-before:0;
+    -webkit-margin-after:0;
+}
+
+.slide .rfooter {
+	position:absolute;
+	bottom:0rem;
+	right:1rem;
+	font-size:0.9em;
+}
+
+.slide .lfooter {
+	position:absolute;
+	bottom:0rem;
+	left:1rem;
+	font-size:0.9em;
+}
+
+#fullscreenContainer .slide {
+	margin:0;
+}
+
+@media print {
+	body { 
+		font-size: .8em; 
+	}
+
+	.menu {
+		/* visibility: hidden; */
+		display: none !important;
+	}
+
+
+	.comment {
+		display: none !important;
+	}
+
+
+	/*
+	article > p, div.equation, div.references, h2, h3, h4, figure {
+		width:92%;
+		margin-left: 4%;
+		margin-right: 4%;
+	}
+
+	article > figure > figcaption {
+		width: 100%;
+	}
+	*/
+
+	img {
+    	page-break-before: auto; 
+    	page-break-after: auto; 
+    	page-break-inside: avoid;
+	}
+
+	.slide {
+		page-break-before: always;
+		page-break-inside: avoid;
+		margin-top:0;
+	}
+}
