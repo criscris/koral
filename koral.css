@@ -92,7 +92,7 @@ a:hover {
 }
 
 .koral .CodeMirror {
-  height: 100%;
+  height: auto;
   margin-left:1rem;
 }
 

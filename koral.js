@@ -1138,12 +1138,15 @@ var KoralInternal = {
     },
 
     activateEditing: function (article, paragraph) {
+        var hLeft = paragraph.leftCol.height();
+
         var codearea = CodeMirror(paragraph.rightCol.get(0), {
             value: paragraph.domStr,
             lineNumbers: true,
             lineWrapping: true,
             indentWithTabs: true,
             indentUnit: 4,
+            smartIndent: false,
             mode: "htmlmixed",
             extraKeys: {
                 "F11": function (cm) {
@@ -1177,6 +1180,9 @@ var KoralInternal = {
             }
             KoralInternal.modifiedEditors.add(cm);
         });
+
+        var hRight = paragraph.rightCol.height();
+        if (hRight > hLeft) codearea.setSize(null, Math.max(hLeft, Math.min(hRight, 150)));
     },
 
     updateIDs: function () {
