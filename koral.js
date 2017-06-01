@@ -1086,27 +1086,40 @@ var KoralInternal = {
             .appendTo(header)
             .text(path);
 
-            $("<a></a>")
-            .css("display", "inline")
-            .css("margin-left", "2rem")
-            .appendTo(header)
-            .text(path.toUpperCase().endsWith(".HTML") ? "View" : "Download")
-            .attr("href", window.location.pathname);
+            var sizeLimit = 1000000;
+            var lineLimit = 2000;
 
+            var url = viewer.data("url");
+            var size = parseInt(viewer.data("size"));
+            if (size > sizeLimit) {
+                url += "?limit=" + sizeLimit;
+            }
             $.ajax({
-                url: viewer.data("url"),
+                url: url,
                 dataType: "text"
             }).done(function(data) 
             {
-                var maxLines = 5000;
-                var lines = data.split("\n");
-                if (lines.length > maxLines)
+                var text = data;
+                var lines = text.split("\n");
+                if (lines.length > lineLimit)
                 {
-                    lines = lines.slice(0, maxLines);
+                    lines = lines.slice(0, lineLimit);
                     lines.push("[..]");
-                    lines.push("Content display limited to first " + maxLines + " lines.");
+                    lines.push("Content display limited to first " + lineLimit + " lines.");
+                    text = lines.join("\n");
                 }
-                var text = lines.join("\n");
+                else if (size > sizeLimit)
+                {
+                    text += "\n[..]\nContent display limited to first " + sizeLimit + " bytes.";
+                }
+                var readOnly = size > sizeLimit || lines.length > lineLimit;
+
+                $("<a></a>")
+                .css("display", "inline")
+                .css("margin-left", "2rem")
+                .appendTo(header)
+                .text(path.toUpperCase().endsWith(".HTML") ? "View" : "Download")
+                .attr("href", window.location.pathname);
 
                 var codearea = CodeMirror(viewer.get(0), {
                     value: text,
@@ -1114,7 +1127,32 @@ var KoralInternal = {
                     lineWrapping: true,
                     indentWithTabs: true,
                     indentUnit: 4,
-                    readOnly:true });
+                    readOnly:readOnly });
+
+                if (!readOnly)
+                {
+                    $("<a></a>")
+                    .css("display", "inline")
+                    .css("margin-left", "2rem")
+                    .appendTo(header)
+                    .text("Save")
+                    .attr("href", "#")
+                    .click(function(e) 
+                    {
+                        e.preventDefault();
+                        $.ajax({
+                            type: "PUT",
+                            url: url + "?action=fileCreationOrUpdate",
+                            data: codearea.getValue(),
+                            success: function (data) {
+                                KoralUI.popup("Saved successfully.");
+                            },
+                            dataType: "text"
+                        }).fail(function () {
+                            KoralUI.popup("Saving failed.");
+                        });
+                    });
+                }
             });
         }
     },

@@ -135,7 +135,9 @@ public class KoralServlet extends HttpServlet
 					.add("div", null, "class", "koralExplorer")
 					.child()
 					.add("div", " ", "class", "browser")
-					.add("div", " ", "class", "viewer", "data-url", "/" + req.projectName + "/" + req.path + "?limit=500000")
+					.add("div", " ", "class", "viewer", 
+							"data-url", "/" + req.projectName + "/" + req.path,
+							"data-size", "" + req.file().length())
 					.create();
 					resp.setContentType(htmlMediaType);
 					resp.getWriter().append(html).close();
