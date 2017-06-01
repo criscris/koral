@@ -33,8 +33,12 @@ public class Columns extends AbstractTable
 	
 	public Columns(List<Table> tables)
 	{
+		if (tables.size() == 0) throw new KoralError("Zero columns.");
 		long ncols = tables.stream().mapToLong(t -> t.ncols()).sum();
 		if (ncols >= Integer.MAX_VALUE - 5) throw new KoralError("Too many columns: " + ncols);
+		
+		long nrows = tables.get(0).nrows();
+		for (int j=1; j<tables.size(); j++) if (tables.get(j).nrows() != nrows) throw new KoralError("nrows mismatch: " + nrows + " != " + tables.get(j).nrows());
 		
 		// any tables that are Columns implementations itself need to be unraveled
 		this.tables = tables.stream()
