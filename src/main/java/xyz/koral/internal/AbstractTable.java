@@ -35,9 +35,12 @@ public abstract class AbstractTable implements Table
 		return body.apply(
 				rows
 				.filter(row -> {
-					if (h.firstRow != null) return true;
-					h.firstRow = row;
-					return false;
+					synchronized (h)
+					{
+						if (h.firstRow != null) return true;
+						h.firstRow = row;
+						return false;
+					}
 				}))
 			.setColNames_m(h.firstRow.toArray(new String[0]));
 	}

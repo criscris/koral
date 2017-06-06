@@ -1516,6 +1516,16 @@ var KoralInternal = {
         gallery.init();
         if (slideIndex > 0) gallery.goTo(slideIndex);
         $(".pswp__button--fs").click();
+
+        var slideChange = () => {
+            $.ajax({
+                type: "GET",
+                url: window.location.pathname + "?action=setSlide&slide=" + gallery.getCurrentIndex(),
+                success: function (data) {},
+            });
+        };
+        slideChange();
+        gallery.listen('afterChange', slideChange);
        
         /*
         var container = document.getElementById("fullscreenContainer");
@@ -1554,6 +1564,30 @@ var KoralInternal = {
         }*/
     },
 
+    currentSlideIndex: 0,
+    slideListener: function()
+    {
+        window.setTimeout(function() {
+            $.ajax({
+                type: "GET",
+                url: window.location.pathname + "?action=getSlide&slide=" + KoralInternal.currentSlideIndex,
+                success: function (data) {
+                    KoralInternal.currentSlideIndex = parseInt(data);
+                    var slides = $(".slide").toArray();
+                    if (slides.length > 0)
+                    {
+                        var slide = slides[Math.max(0, Math.min(slides.length - 1, KoralInternal.currentSlideIndex))];
+                        slide.scrollIntoView(true);
+                    }
+                    KoralInternal.slideListener();
+                },
+                dataType: "text"
+            }).fail(function () {
+                KoralInternal.slideListener();
+            });
+        }, 500);
+    },
+
     slides: function()
     {
         $("<div class='pswp' tabindex='-1' role='dialog' aria-hidden='true'>" +
@@ -1589,6 +1623,7 @@ var KoralInternal = {
                 "</div>" +
             "</div>" +
         "</div>").appendTo($("body").first());
+        if (Koral.getUrlParameter("slideListener") != null) KoralInternal.slideListener();
 
         /*
         $("body").append($("<div style='margin:0;padding:0' id='fullscreenContainer'></div>"));

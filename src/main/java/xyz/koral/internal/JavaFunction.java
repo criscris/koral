@@ -62,7 +62,7 @@ public class JavaFunction implements KoralFunction
 			}
 			else if ("source".equals(arg.type))
 			{
-				s = new NamedSupplier(arg.val.toString(), input(params[j], paramsG[j], new File(basePath, arg.val.toString())));
+				s = new NamedSupplier(arg.val.toString(), input(params[j], paramsG[j], new File(basePath, arg.val.toString()), arg.parallel));
 			}
 			
 			if (s == null) throw new KoralError("Could not create a type mapping for parameter " + name + " for target " + target);
@@ -101,7 +101,7 @@ public class JavaFunction implements KoralFunction
 		}
 	}
 	
-	static Supplier<Object> input(Class<?> clazz, Type type, File source)
+	static Supplier<Object> input(Class<?> clazz, Type type, File source, boolean parallel)
 	{
 		String typeName = clazz.getTypeName();
 		String gTypeName = type.getTypeName();
@@ -128,7 +128,7 @@ public class JavaFunction implements KoralFunction
 			return () -> Table.csvToData(IO.readCSV(IO.istream(source)));
 		case "java.util.stream.Stream": 
 			Class<?> gclazz = genericClass.apply(gTypeName);
-			return () -> IO.readJSONStream(IO.istream(source), gclazz);
+			return () -> parallel ? IO.readJSONStreamParallel(IO.istream(source), gclazz) : IO.readJSONStream(IO.istream(source), gclazz);
 		case "java.util.List": 
 		case "java.util.Collection":
 			gclazz = genericClass.apply(gTypeName);

@@ -4,6 +4,7 @@ public class Arg
 {
 	public String type;
 	public Object val;
+	public boolean parallel;
 	
 	public Arg(String type, Object val)
 	{

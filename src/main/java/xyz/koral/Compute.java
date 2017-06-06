@@ -115,7 +115,7 @@ public class Compute
 			func.init(basePath, name, info);
 			tasks.add(func);
 		});
-		System.out.println(tasks.size() + " compute tasks. " + Arrays.toString(tasks.stream().map(t -> t.target()).toArray()));
+		System.out.println(tasks.size() + " compute task" + (tasks.size() > 1 ? "s" : "") + ". " + Arrays.toString(tasks.stream().map(t -> t.target()).toArray()));
 		
 		if (dryRun || tasks.size() == 0) return;
 		

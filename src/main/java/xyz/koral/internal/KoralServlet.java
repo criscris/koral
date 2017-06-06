@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,9 @@ public class KoralServlet extends HttpServlet
 		fileCreationOrUpdate,
 		rename,
 		commit,
-		edit
+		edit,
+		setSlide,
+		getSlide
 	}
 
 	File configFile;
@@ -58,7 +61,7 @@ public class KoralServlet extends HttpServlet
 	long configLastModified;
 	ServerConfiguration config;
 	List<Method> methods;
-	
+	SlidePresenter slidePresenter = new SlidePresenter();
 	
 	public KoralServlet(File configFile)
 	{
@@ -247,8 +250,31 @@ public class KoralServlet extends HttpServlet
 					Git.commit(new File(req.project.path), req.path, req.author, commitMessage);
 				});
 		
+		Method setSlide = new Method(
+				Arrays.asList(
+						r -> r.action == Action.setSlide,
+						isAuthor,
+						fileExists), 
+				(req, resp) -> 
+				{
+					int slide = new Integer(req.req.getParameter("slide"));
+					slidePresenter.set(req.uri(), slide);
+				});
+		Method getSlide = new Method(
+				Arrays.asList(
+						r -> r.action == Action.getSlide,
+						isAuthor,
+						fileExists), 
+				(req, resp) -> 
+				{
+					int last = new Integer(req.req.getParameter("slide"));
+					int newSlide = slidePresenter.waitForChange(req.uri(), last, 120000L);
+					resp.setContentType(jsonMediaType);
+					resp.getWriter().append("" + newSlide).close();
+				});
+		
 		methods = Arrays.asList(get, browseFolder, fileViewer, filesMeta, history, 
-				folderCreate, rename, delete, fileUpdate, commit);
+				folderCreate, rename, delete, fileUpdate, commit, setSlide, getSlide);
 	}
 	
 	public ServerConfiguration getConfig()
@@ -346,6 +372,8 @@ public class KoralServlet extends HttpServlet
 			case "commit": r.action = Action.commit; break;
 			case "history": r.action = Action.history; break;
 			case "edit": r.action = Action.edit; break;
+			case "setSlide": r.action = Action.setSlide; break;
+			case "getSlide": r.action = Action.getSlide; break;
 			}
 		}
 		return r;
@@ -443,6 +471,42 @@ public class KoralServlet extends HttpServlet
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException 
 	{
 		doRequest(Verb.POST, req, resp);
+	}
+}
+
+class SlidePresenter
+{
+	Map<String, Integer> toCurrentSlide = new HashMap<>();
+	
+	public void set(String url, int slideIndex)
+	{
+		toCurrentSlide.put(url, slideIndex);
+	}
+	
+	public int get(String url)
+	{
+		Integer slide = toCurrentSlide.get(url);
+		return slide == null ? 0 : slide;
+	}
+	
+	public int waitForChange(String url, int lastIndex, long timeOutInMs)
+	{
+		long startTime = System.currentTimeMillis();
+		do 
+		{
+			int newIndex = get(url);
+			if (newIndex != lastIndex) return newIndex;
+			try 
+			{
+				Thread.sleep(200);
+			} 
+			catch (InterruptedException e) 
+			{
+
+			}
+		}
+		while (System.currentTimeMillis() - startTime < timeOutInMs);
+		return get(url);
 	}
 }
  
