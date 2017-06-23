@@ -266,12 +266,14 @@ public interface Table extends Readable, Modifiable, Transformable, Summable, In
 				if (a2.size() == 0) return a1;
 				if (a1.size() == 0) return a2;
 				
- 				List<Table> cols_ = new ArrayList<>();
+ 				
 				for (int i=0; i<a1.size(); i++)
 				{
-					cols_.add(a1.get(i).rowBind(a2.get(i)));
+					Table a = a1.get(i);
+					Table b = a2.get(i);
+					for (long j=0; j<b.nrows(); j++) a.set_m(a.nrows(), b.getD(j));
 				}
-				return cols_;
+				return a1;
 			}, a ->
 			{
 				if (a.size() == 1) return a.get(0);

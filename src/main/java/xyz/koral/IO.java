@@ -252,9 +252,19 @@ public interface IO
 		return readCSV(new InputStreamReader(is, cs));
 	}
 	
+	static Stream<List<String>> readCSVParallel(InputStream is)
+	{
+		return readCSVParallel(new InputStreamReader(is, cs));
+	}
+	
 	static Stream<List<String>> readCSV(Reader reader_)
 	{	
 		return readLines(reader_).map(line -> splitCSVLine(line));
+	}
+	
+	static Stream<List<String>> readCSVParallel(Reader reader_)
+	{	
+		return readLines(reader_).parallel().map(line -> splitCSVLine(line));
 	}
 	
 	static <T> Stream<T> readCSV(InputStream is, Class<T> clazz)
