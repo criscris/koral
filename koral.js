@@ -2247,10 +2247,10 @@ var KoralPlot = {
                     conf.xTransform = d3.scale.linear().domain([conf.xTransform.min, conf.xTransform.max]);
                 } else if (conf.xTransform.type == "log")
                 {
+                    if (conf.xTransform.min == 0) conf.xTransform.min = conf.xTransform.max >= 1 ? 1e-5 : conf.xTransform.max/1000.0; // prevent log10(0)
                     var t = KoralPlot.logTicks(conf.xTransform.min, conf.xTransform.max);
                     conf.xTicks = t.ticks;
                     conf.xTickLabels = t.tickLabels;
-
                     conf.xTransform = d3.scale.log().domain([conf.xTransform.min, conf.xTransform.max]);
                 }
 
@@ -2269,6 +2269,7 @@ var KoralPlot = {
                     conf.yTransform = d3.scale.linear().domain([conf.yTransform.min, conf.yTransform.max]);
                 } else if (conf.yTransform.type == "log")
                 {
+                    if (conf.yTransform.min == 0) conf.yTransform.min = conf.yTransform.max >= 1 ? 1e-5 : conf.yTransform.max/1000.0; // prevent log10(0)
                     var t = KoralPlot.logTicks(conf.yTransform.min, conf.yTransform.max);
                     conf.yTicks = t.ticks;
                     conf.yTickLabels = t.tickLabels;
