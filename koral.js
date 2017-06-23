@@ -1162,8 +1162,12 @@ var KoralInternal = {
 
         if (window.location.protocol !== "file:")
         {
-            menuEntries.push({label: "Save", onclick: KoralInternal.saveOnServer});
-            menuEntries.push({label: "Save and Commit", onclick: KoralInternal.commitOnServer});
+            var saver = function() { KoralInternal.checkModification(KoralInternal.saveOnServer); };
+            menuEntries.push({label: "Save", onclick: saver });
+            
+            var comitter = function() { KoralInternal.checkModification(KoralInternal.commitOnServer); };
+            menuEntries.push({label: "Save and Commit", onclick: comitter});
+            
             menuEntries.push({label: "History", onclick: KoralInternal.history});
         }
         
@@ -1721,6 +1725,22 @@ var KoralInternal = {
     history: function ()
     {
         window.open(window.location.pathname + "?action=history", "_blank");
+    },
+
+    checkModification: function(onOkCallback)
+    {
+        if (KoralInternal.modifiedEditors.size == 0)
+        {
+            onOkCallback();
+            return;
+        }
+
+        var p = $("<div>Changes in one or more text editors are not executed yet.<br>Only updated content will be saved.<br>To update content, click on the 'run' button before saving.</div>");
+        var buttons = [{name: "Continue saving", onclickfunc: function() {
+            onOkCallback(); 
+            return true;
+        } }];
+        KoralUI.dialog("Warning", p.get(0), buttons);
     },
 
     saveOnServer: function ()
