@@ -3,6 +3,8 @@ package xyz.koral.internal;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -347,7 +349,15 @@ public class KoralServlet extends HttpServlet
 	{
 		Request r = new Request();
 		r.req = req;
-		String uri = req.getRequestURI().substring(req.getContextPath().length());
+		String uri;
+		try 
+		{
+			uri = URLDecoder.decode(req.getRequestURI().substring(req.getContextPath().length()), "UTF-8");
+		} 
+		catch (UnsupportedEncodingException e) 
+		{
+			return null;
+		}
 		
 		if (uri.contains("..")) return null;
 		int i1 = uri.indexOf("/");
@@ -422,6 +432,7 @@ public class KoralServlet extends HttpServlet
 			return;
 		}
 		
+		System.out.println("filexists=" + r.file().exists());
 
 		Method method = null;
 		for (Method m : methods)
