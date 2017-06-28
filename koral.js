@@ -1292,6 +1292,7 @@ var KoralInternal = {
                             bibIDtoPosition[bib.cite] = position;
                         }
                         $(this).text("[" + position + "]");
+                        $(this).addClass("tooltip");
                     }
                 });
             });
@@ -1313,13 +1314,23 @@ var KoralInternal = {
                     }
                 }
                 var journal = bib.journal != null ? bib.journal + "." : "";
-                var refText = authors + " (" + bib.year + "): " + bib.title + ". " + journal;
+                var refText = "<i>" + authors + " </i>(" + bib.year + "): <b>" + bib.title + ".</b> " + journal;
                 bibhtml.append("<li id='" + bib.cite + "'>" + refText + "</li>");
 
                 // add tooltip to each link
                 $("a[href='#" + bib.cite + "']").each(function (index, value)
                 {
-                    $(this).attr("title", refText);
+                    //$(this).attr("title", refText);
+                    $("<span></span>")
+                    .appendTo($(this))
+                    .addClass("tooltiptext")
+                    .append(refText);
+
+                    if (bib.url)
+                    {
+                        $(this).attr("href", bib.url);
+                        $(this).attr("target", "_blank");
+                    }
                 });
             }
         }

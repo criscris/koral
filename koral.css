@@ -532,6 +532,30 @@ pre.prettyprint {
 	margin:0;
 }
 
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+	min-width: 400px;
+    visibility: hidden;
+    
+    background-color: rgb(240,240,240);
+    border-width: 2px;
+  	border-style: dashed;
+  	padding: 0.5rem;
+    
+    position: absolute;
+    z-index: 1;
+    top: -5px;
+    left: 105%;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+}
+
 @media print {
 	body { 
 		font-size: .8em; 
