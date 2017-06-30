@@ -547,7 +547,7 @@ pre.prettyprint {
   	padding: 0.5rem;
     
     position: absolute;
-    z-index: 1;
+    z-index: 2000;
     top: -5px;
     left: 105%;
 }
