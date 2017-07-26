@@ -738,11 +738,9 @@ var KoralInternal = {
     modifiedEditors: new Set(),
     figureIDtoNumber: {},
     equationIDtoNumber: {},
-
-    importScripts: function (onLoadCallback) {
-		document.writeln("<meta name='viewport' content='width=device-width, initial-scale=1'>");
-        document.writeln("<link rel='icon' href='data:;base64,iVBORw0KGgo='/>");
-
+    spelling: null,
+    
+    koralUrl: function() {
         var scriptTags = document.getElementsByTagName('script');
         var url = null;
         for (var i = 0; i < scriptTags.length; i++)
@@ -759,6 +757,14 @@ var KoralInternal = {
         }
         if (url == null)
             throw "Invalid koral script referencing";
+        return url;
+    },
+
+    importScripts: function (onLoadCallback) {
+		document.writeln("<meta name='viewport' content='width=device-width, initial-scale=1'>");
+        document.writeln("<link rel='icon' href='data:;base64,iVBORw0KGgo='/>");
+
+        var url = KoralInternal.koralUrl();
 
         var css = ["lib/codemirror/codemirror.css",
             "lib/codemirror/addon/display/fullscreen.css",
@@ -820,7 +826,9 @@ var KoralInternal = {
                     "lib/codemirror/mode/r/r.js",
                     "lib/codemirror/mode/octave/octave.js",
                     "lib/codemirror/addon/display/fullscreen.js",
-                    "lib/jstree/jstree.min.js" // 3.3.4
+                    "lib/jstree/jstree.min.js", // 3.3.4
+                    "lib/codemirror/spelling/spell-checker.js",
+                    "lib/codemirror/spelling/typo.js"
                 ];
 
         // html dom needs to be loaded completely && all external scripts are loaded before we continue
@@ -926,6 +934,7 @@ var KoralInternal = {
         	tex2jax: {inlineMath: [['$', '$'], ['\\(', '\\)']]},
             skipStartupTypeset: true,
         	"HTML-CSS": { linebreaks: { automatic:true }}});
+        KoralInternal.initSpelling();
 
         $("article").each(function (index, value)
         {
@@ -938,6 +947,44 @@ var KoralInternal = {
         KoralInternal.slides();
         KoralInternal.addBrowser();
         KoralInternal.addFileViewer();
+    },
+    
+    initSpelling: function() {
+    	function loadTypo(affPath, dicPath) {
+    		return new Promise(function(resolve, reject) {
+    			var xhr_aff = new XMLHttpRequest();
+    			xhr_aff.open('GET', affPath, true);
+    			xhr_aff.onload = function() {
+    				if (xhr_aff.readyState === 4 && xhr_aff.status === 200) {
+    					//console.log('aff loaded');
+    					var xhr_dic = new XMLHttpRequest();
+    					xhr_dic.open('GET', dicPath, true);
+    					xhr_dic.onload = function() {
+    						if (xhr_dic.readyState === 4 && xhr_dic.status === 200) {
+    							//console.log('dic loaded');
+    							resolve(new Typo('en_US', xhr_aff.responseText, xhr_dic.responseText, { platform: 'any' }));
+    						} else {
+    							//console.log('failed loading dic');
+    							reject();
+    						}
+    					};
+    					//console.log('loading dic');
+    					xhr_dic.send(null);
+    				} else {
+    					//console.log('failed loading aff');
+    					reject();
+    				}
+    			};
+    			//console.log('loading aff');
+    			xhr_aff.send(null);
+    		});
+    	}
+    	
+    	// from: https://discuss.codemirror.net/t/inputstyle-contenteditable-we-may-hope-for-browser-spell-checking/608/6
+    	// https://plnkr.co/edit/0y1wCHXx3k3mZaHFOpHT?p=preview
+    	
+    	var url = KoralInternal.koralUrl();
+    	KoralInternal.spelling = loadTypo(url + "lib/codemirror/spelling/en_US.aff", url + "lib/codemirror/spelling/en_US.dic");
     },
 
     addBrowser: function() {
@@ -1225,6 +1272,8 @@ var KoralInternal = {
 
         var hRight = paragraph.rightCol.height();
         if (hRight > hLeft) codearea.setSize(null, Math.max(hLeft, Math.min(hRight, 150)));
+        
+        KoralInternal.spelling.then(typo => startSpellCheck(codearea, typo));
     },
 
     updateIDs: function () {
