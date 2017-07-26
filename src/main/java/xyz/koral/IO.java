@@ -1,5 +1,6 @@
 package xyz.koral;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -16,9 +17,12 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Serializable;
 import java.io.Writer;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -129,10 +133,10 @@ public interface IO
 				File gzFile = new File(file.getAbsolutePath() + ".gz");
 				if (gzFile.exists())
 				{
-					return new GZIPInputStream(new FileInputStream(gzFile));
+					return new GZIPInputStream(new BufferedInputStream(new FileInputStream(gzFile)));
 				}
 			}
-			return gz ? new GZIPInputStream(new FileInputStream(file)) : new FileInputStream(file);
+			return gz ? new GZIPInputStream(new BufferedInputStream(new FileInputStream(file))) : new FileInputStream(file);
 		} 
 		catch (IOException ex) 
 		{
@@ -776,6 +780,50 @@ public interface IO
     	{
     		throw new KoralError(ex);
 		}
+    }
+    
+    public static String jvmInfo()
+    {
+    	StringBuilder sb = new StringBuilder();
+    	Runtime r = Runtime.getRuntime();
+    	
+    	sb.append("JVMINFO availableCores=" + r.availableProcessors() + " ");
+		
+    	int mb = 1024*1000;
+		long free = r.freeMemory()/mb;
+		long total = r.totalMemory()/mb;
+		long used = total - free;
+		
+		sb.append("usedMemMB=" + used + " ");
+		sb.append("totalMemMB=" + total + " ");
+		sb.append("maxMemMB=" + r.maxMemory()/mb + " ");
+		
+		sb.append("os=" + System.getProperty("os.name") + " ");
+		sb.append("osUser=" + System.getProperty("user.name") + " ");
+		sb.append("javaVersion=" + Runtime.class.getPackage().getImplementationVersion() + " ");
+		sb.append("jvmPath=" + System.getProperty("java.home") + " ");
+		
+		try 
+		{
+			sb.append("host=" + InetAddress.getLocalHost().getHostName() + " ");
+		} 
+		catch (UnknownHostException ex) 
+		{
+			
+		}
+		try 
+		{
+			sb.append("domain=" + InetAddress.getLocalHost().getCanonicalHostName() + " ");
+		} 
+		catch (UnknownHostException ex) 
+		{
+			
+		}
+		
+		sb.append("processID=" + ManagementFactory.getRuntimeMXBean().getName() + " ");
+		sb.append("threadID=" + Thread.currentThread().getName());
+    	
+		return sb.toString();
     }
 }
 

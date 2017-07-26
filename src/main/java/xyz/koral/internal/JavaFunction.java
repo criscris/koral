@@ -1,6 +1,8 @@
 package xyz.koral.internal;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -25,20 +27,20 @@ import xyz.koral.Table;
 
 public class JavaFunction implements KoralFunction
 {
+	File basePath;
 	String target;
 	DataSource descriptor;
 	
-	File outFile;
 	Method method;
 	List<NamedSupplier> valueSupplier;
 	
 	public void init(File basePath, String target, DataSource descriptor) 
 	{
+		this.basePath = basePath;
 		this.target = target;
 		this.descriptor = descriptor;
 		method = staticMethod(descriptor.func); 
-		outFile = new File(basePath, target);
-		
+
 		Gson gson = new Gson();
 		Class<?>[] params = method.getParameterTypes();
 		Type[] paramsG = method.getGenericParameterTypes();
@@ -74,10 +76,14 @@ public class JavaFunction implements KoralFunction
 	{
 		return target;
 	}
-
-	public void run(Map<String, Table> tableCache) 
+	
+	public File basePath() 
 	{
-		outFile.getParentFile().mkdirs();
+		return basePath;
+	}
+
+	public void run(Supplier<OutputStream> os, Map<String, Table> tableCache) 
+	{
 		try 
 		{
 			Object result = method.invoke(null, valueSupplier.stream().map(s -> 
@@ -93,7 +99,7 @@ public class JavaFunction implements KoralFunction
 			}).toArray());
 			
 			if (tableCache != null && result instanceof Table) tableCache.put(target, (Table) result);
-			if (!descriptor.nostore) output(result, outFile);
+			if (!descriptor.nostore) output(result, os.get());
 		} 
 		catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
 		{
@@ -139,25 +145,40 @@ public class JavaFunction implements KoralFunction
 		return () -> IO.readJSON(IO.istream(source), clazz);
 	}
 	
-	static void output(Object result, File outFile)
+	static void output(Object result, OutputStream os)
 	{
 		if (result instanceof Stream)
 		{
-			IO.writeJSONStream((Stream<?>) result, IO.ostream(outFile)); 
+			IO.writeJSONStream((Stream<?>) result, os); 
 		}
 		else if (result instanceof Table)
 		{
-			IO.writeCSV(((Table) result).toCSV(), IO.ostream(outFile));
+			IO.writeCSV(((Table) result).toCSV(), os);
 		}
 		else if (result instanceof Collection)
 		{
-			IO.writeJSONStream(((Collection<?>) result).stream(), IO.ostream(outFile));
+			IO.writeJSONStream(((Collection<?>) result).stream(), os);
+		}
+		else if (result instanceof byte[])
+		{
+			try 
+			{
+				os.write((byte[]) result);
+				os.flush();
+				os.close();
+			} 
+			catch (IOException ex)
+			{
+				throw new KoralError(ex);
+			}
 		}
 		else
 		{
-			IO.writeJSON(result, IO.ostream(outFile));
+			IO.writeJSON(result, os);
 		}
 	}
+	
+	
 	
 	static Method staticMethod(String methodReference)
 	{

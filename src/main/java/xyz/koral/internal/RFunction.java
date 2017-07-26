@@ -1,10 +1,12 @@
 package xyz.koral.internal;
 
 import java.io.File;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
@@ -44,8 +46,13 @@ public class RFunction implements KoralFunction
 	{
 		return target;
 	}
+	
+	public File basePath() 
+	{
+		return basePath;
+	}
 
-	public void run(Map<String, Table> tableCache) 
+	public void run(Supplier<OutputStream> os, Map<String, Table> tableCache) 
 	{
 		R r = new R();
 		Gson gson = new Gson();
@@ -100,8 +107,7 @@ public class RFunction implements KoralFunction
 		
 		if (!descriptor.nostore)
 		{
-			File outFile = new File(basePath, target);
-			IO.writeCSV(result.toCSV(), IO.ostream(outFile));
+			IO.writeCSV(result.toCSV(), os.get());
 		}
 	}
 }

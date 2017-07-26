@@ -17,6 +17,14 @@ public class DataSource
 		args = new HashMap<>();
 	}
 	
+	public DataSource(DataSource source)
+	{
+		nostore = source.nostore;
+		func = source.func;
+		env = source.env;
+		args = new HashMap<>(source.args);
+	}
+	
 	public DataSource addArg(String name, Arg arg)
 	{
 		args.put(name, arg);

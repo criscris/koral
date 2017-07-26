@@ -432,8 +432,6 @@ public class KoralServlet extends HttpServlet
 			return;
 		}
 		
-		System.out.println("filexists=" + r.file().exists());
-
 		Method method = null;
 		for (Method m : methods)
 		{

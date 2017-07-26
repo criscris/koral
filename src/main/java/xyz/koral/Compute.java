@@ -1,6 +1,7 @@
 package xyz.koral;
 
 import java.io.File;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -125,9 +126,33 @@ public class Compute
 		{
 			KoralFunction task = tasks.get(i);
 			long time = System.currentTimeMillis();
-			task.run(tableCache);
+			task.run(() -> 
+			{ 
+				File outFile = new File(basePath, task.target());
+				outFile.getParentFile().mkdirs();
+				return IO.ostream(outFile);
+			}, 
+			tableCache);
 			System.out.println("[Compute task " + (i+1) + " of " + tasks.size() + "] " + (System.currentTimeMillis() - time) + " ms for " + task.target());
 		}
 		System.out.println((System.currentTimeMillis() - startTime) + " ms total exec time.");
-	} 
+	}
+	
+	static KoralFunction init(File basePath, String name, DataSource ds)
+	{
+		KoralFunction func = null;
+		switch (ds.env.toLowerCase())
+		{
+		case "java": func = new JavaFunction(); break;
+		case "r": func = new RFunction(); break;
+		}
+		if (func == null) throw new KoralError("Specified enviroment \"" + ds.env + "\" not found.");
+		func.init(basePath, name, ds);
+		return func;
+	}
+	
+	public static void compute(File basePath, String name, DataSource ds, OutputStream os)
+	{
+		init(basePath, name, ds).run(() -> os);
+	}
 }

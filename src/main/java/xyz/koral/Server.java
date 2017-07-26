@@ -1,6 +1,7 @@
 package xyz.koral;
 
 import java.io.File;
+import java.time.LocalDateTime;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
@@ -24,7 +25,15 @@ public class Server
 			System.out.println("Cannot find " + configFile.getAbsolutePath());
 			return;
 		}
-		new Server(port, configFile).awaitShutDown();
+		
+		Server s = new Server(port, configFile);
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> 
+		{
+			System.out.println(LocalDateTime.now() + " Server shutdown.");
+			s.shutDown();
+		}));
+		
+		s.awaitShutDown();
 	}
 	
 	Tomcat tomcat;
