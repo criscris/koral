@@ -2013,7 +2013,8 @@ var KoralPlot = {
         zData: 2,
         x2Data: undefined,
         y2Data: undefined,
-        type: "points", // line, errorBars, area
+        z2Data: undefined,
+        type: "points", // line, errorBars, area, errorBarsAbs
         size: 2.0,
         color: "rgb(0, 0, 255)",
         errorBarThickness: 1.0,
@@ -2546,6 +2547,41 @@ var KoralPlot = {
                             var normy = conf.yTransform(y);
                             var normyL = conf.yTransform(y - z);
                             var normyU = conf.yTransform(y + z);
+
+                            if (normx < 0 || normx > 1 || normy < 0 || normy > 1)
+                                continue;
+                            var screenx = normx * conf.plotWidth;
+
+                            var screenyL = (1.0 - normyL) * conf.plotHeight;
+                            var screenyU = (1.0 - normyU) * conf.plotHeight;
+
+                            g.append("path").attr("d", "M" + screenx + " " + screenyL + " L" + screenx + " " + screenyU).attr("style", css);
+
+                            if (drawConf.errorCrossBarWidth > 0)
+                            {
+                                var w = drawConf.errorCrossBarWidth / 2.0;
+                                g.append("path").attr("d", "M" + (screenx - w) + " " + screenyL + " L" + (screenx + w) + " " + screenyL).attr("style", css);
+                                g.append("path").attr("d", "M" + (screenx - w) + " " + screenyU + " L" + (screenx + w) + " " + screenyU).attr("style", css);
+                            }
+                        }
+                    } else if (drawConf.type == "errorBarsAbs")
+                    {
+                        var css = "fill:none; stroke:" + drawConf.color + "; stroke-width:" + drawConf.errorBarThickness + "px";
+                        for (var i = 0; i < data.length; i++)
+                        {
+                            var e = data[i];
+                            var x = Number(e[colNames[drawConf.xData]]);
+                            var y = Number(e[colNames[drawConf.yData]]);
+                            var z1 = Number(e[colNames[drawConf.zData]]);
+                            var z2 = Number(e[colNames[drawConf.z2Data]]);
+                            if (isNaN(z1) || isNaN(z2))
+                                continue;
+
+                            var normx = conf.xTransform(x);
+
+                            var normy = conf.yTransform(y);
+                            var normyL = conf.yTransform(Math.min(z1, z2));
+                            var normyU = conf.yTransform(Math.max(z1, z2));
 
                             if (normx < 0 || normx > 1 || normy < 0 || normy > 1)
                                 continue;
