@@ -2095,33 +2095,6 @@ var KoralPlot = {
         if (part.find("figure").length == 0 && part.find("table").length == 0)
             return;
 
-        // step 0: arrange figures
-        part.find("figure").each(function (index, value)
-        {
-            var children = $(this).children("svg, img, object");
-            if (children.length > 1)
-            {
-                var index = 0;
-                children.each(function (i, v)
-                {
-                    $(this).wrap("<div style='float:left'></div>");
-
-                    if ($(this).prop("tagName") === "svg")
-                    {
-                        var svg = d3.select($(this).get(0));
-                        var letter = String.fromCharCode("A".charCodeAt(0) + index);
-                        svg.append("text").text(letter).classed("figureLetter", true).attr("x", -48).attr("y", 0);
-                    } else
-                    {
-                        var letter = String.fromCharCode("a".charCodeAt(0) + index);
-                        $(this).parent().append("<p style='margin-left: 3rem'>(" + letter + ")</p>");
-                    }
-                    index++;
-                });
-                $(this).children("figcaption").css("clear", "left");
-            }
-        });
-
         // step 0b: urls
         $("article").each(function (index, value)  // bug? what happens with several articles? use only article that is parent 
         {
@@ -2253,16 +2226,20 @@ var KoralPlot = {
                     tbody.append(row);
                 }
             });
-
-            part.find("svg.plot").each(function (index, value)
+            
+            var initPlot = function (index, value)
             {
                 var conf = Koral.getJsonDataAttribute(this, "config", KoralPlot.plotDefaults);
+                var svg = d3.select($(this).get(0));
+                var isInset = $(this).prop("tagName").toLowerCase() !== "svg";
+                var gsWithUrl = $(this).find("g[data-url]").filter((i, e) =>  isInset || $(e).parents(".inset").length == 0);
+                var gsWithConf = $(this).find("g[data-config]").filter((i, e) =>  isInset || (!$(e).hasClass("inset") && $(e).parents(".inset").length == 0));
 
                 var minx = 0;
                 var maxx = 0;
                 var miny = 0;
                 var maxy = 0;
-                $(this).find("[data-url]").each(function (i, v)
+                gsWithUrl.each(function (i, v)
                 {
                     var url = $(this).data("url");
 
@@ -2309,9 +2286,12 @@ var KoralPlot = {
                 } else if (conf.xTransform.type == "log")
                 {
                     if (conf.xTransform.min == 0) conf.xTransform.min = conf.xTransform.max >= 1 ? 1e-5 : conf.xTransform.max/1000.0; // prevent log10(0)
-                    var t = KoralPlot.logTicks(conf.xTransform.min, conf.xTransform.max);
-                    conf.xTicks = t.ticks;
-                    conf.xTickLabels = t.tickLabels;
+                    if (!(conf.xTicks != null && conf.xTickLabels != null))
+                    {
+                        var t = KoralPlot.logTicks(conf.xTransform.min, conf.xTransform.max);
+                        conf.xTicks = t.ticks;
+                        conf.xTickLabels = t.tickLabels;
+                    }
                     conf.xTransform = d3.scale.log().domain([conf.xTransform.min, conf.xTransform.max]);
                 }
 
@@ -2331,20 +2311,22 @@ var KoralPlot = {
                 } else if (conf.yTransform.type == "log")
                 {
                     if (conf.yTransform.min == 0) conf.yTransform.min = conf.yTransform.max >= 1 ? 1e-5 : conf.yTransform.max/1000.0; // prevent log10(0)
-                    var t = KoralPlot.logTicks(conf.yTransform.min, conf.yTransform.max);
-                    conf.yTicks = t.ticks;
-                    conf.yTickLabels = t.tickLabels;
+                    if (!(conf.yTicks != null && conf.yTickLabels != null))
+                    {
+                        var t = KoralPlot.logTicks(conf.yTransform.min, conf.yTransform.max);
+                        conf.yTicks = t.ticks;
+                        conf.yTickLabels = t.tickLabels;	
+                    }                
                     conf.yTransform = d3.scale.log().domain([conf.yTransform.min, conf.yTransform.max]);
                 }
+                
+                if (!isInset)
+                {
+                    var width = conf.left + conf.plotWidth + conf.right;
+                    var height = conf.top + conf.plotHeight + conf.bottom;
+                	svg.attr("width", width).attr("height", height).attr("viewBox", (-conf.left) + " " + (-conf.top) + " " + width + " " + height);
+                }
 
-
-                var width = conf.left + conf.plotWidth + conf.right;
-                var height = conf.top + conf.plotHeight + conf.bottom;
-
-                var svg = d3.select($(this).get(0));
-                svg.attr("width", width).attr("height", height).attr("viewBox", (-conf.left) + " " + (-conf.top) + " " + width + " " + height);
-
-                var defs = svg.insert("defs", ":first-child");
 
                 // debug
                 //svg.append("rect").attr("style", "fill:none;stroke:#000000;stroke-width:1px;").attr("stroke-dasharray", "5,5").attr("x", 0).attr("y", 0).attr("width", conf.plotWidth).attr("height", conf.plotHeight);
@@ -2354,14 +2336,15 @@ var KoralPlot = {
 
                 if (conf.plotBorder) svg.append("rect").classed("plotStroke", true).attr("x", -conf.plotMargin).attr("y", -conf.plotMargin)
                         .attr("width", (conf.plotWidth + 2 * conf.plotMargin)).attr("height", (conf.plotHeight + 2 * conf.plotMargin));
-                if (conf.xLabel) svg.append("text").text(conf.xLabel).classed("plotText axis", true).attr("x", conf.plotWidth / 2.0).attr("y", conf.plotHeight + 52).attr("text-anchor", "middle");
+                if (conf.xLabel) svg.append("text").text(conf.xLabel).classed("plotText axis", true).attr("x", conf.plotWidth / 2.0).attr("y", conf.plotHeight + 49).attr("text-anchor", "middle"); // 52
                 if (conf.yLabel) svg.append("text").text(conf.yLabel).classed("plotText axis", true).attr("text-anchor", "middle").attr("x", 0).attr("y", 0)
-                        .attr("transform", "translate(" + (-41) + "," + (conf.plotHeight / 2) + ") rotate(-90)");
+                        .attr("transform", "translate(" + (-38) + "," + (conf.plotHeight / 2) + ") rotate(-90)"); // -41
 
 
                 if (conf.plotBorder)
                 {
                     var xaxis = svg.append("g").attr("transform", "translate(0 " + (conf.plotHeight + conf.plotMargin) + ")");
+                  
                     for (var i = 0; i < conf.xTicks.length; i++)
                     {
                         var tick = conf.xTicks[i];
@@ -2369,12 +2352,12 @@ var KoralPlot = {
 
                         var norm = conf.xTransform(tick);
                         var screen = norm * conf.plotWidth;
-
+                        
                         var tl = label != null && label.length > 0 ? conf.tickHalfLength : conf.tickHalfLengthSmall;
                         xaxis.append("line").classed("plotStroke", true).attr("x1", screen).attr("x2", screen).attr("y1", -tl).attr("y2", tl);
 
                         if (label != null && label.length > 0)
-                        {
+                        { 
                             xaxis.append("text").text(label).classed("plotText tick", true).attr("text-anchor", "middle").attr("x", screen).attr("y", 18);
                         }
                     }
@@ -2396,238 +2379,24 @@ var KoralPlot = {
                         }
                     }                    
                 }
-
-
-                $(this).find("g[data-url]").each(function (i, v)
+                
+                // plots                
+                gsWithUrl.each(function (i, v)
                 {
                     var url = $(this).data("url");
 
                     var drawConf = Koral.getJsonDataAttribute(this, "config", KoralPlot.plotDrawDefaults);
 
                     var data = urls[url];
-                    var colNames = Object.getOwnPropertyNames(data[0]);
-                    if (drawConf.rows != null)
-                    {
-                        var d = []
-                        var col = colNames[drawConf.rows.column];
-                        for (var i = 0; i < data.length; i++)
-                        {
-                            var e = data[i];
-                            if (e[col] === drawConf.rows.equals)
-                            {
-                                d.push(e);
-                            }
-                        }
-                        data = d;
-                    }
-
-                    var g = d3.select($(this).get(0));
+                    
+                    var g = d3.select($(domPart).get(0));
                     g.append("title").text(url);
-                    g.attr("fill", drawConf.color);
 
-                    if (drawConf.type === "points")
-                    {
-                        var cinterp = drawConf.colorMapper != null ? d3.scale.linear().domain(drawConf.colorMapper.in).interpolate(d3.interpolateRgb).range(drawConf.colorMapper.out) : null;
-
-                        for (var i = 0; i < data.length; i++)
-                        {
-                            var e = data[i];
-                            var x = Number(e[colNames[drawConf.xData]]);
-                            var y = Number(e[colNames[drawConf.yData]]);
-                            var z = Number(e[colNames[drawConf.zData]]);
-                            if (isNaN(x) || isNaN(y))
-                                continue;
-                            var normx = conf.xTransform(x);
-                            var normy = conf.yTransform(y);
-                            if (normx < 0 || normx > 1 || normy < 0 || normy > 1 || isNaN(normx) || isNaN(normx))
-                                continue;
-
-                            var t = null;
-                            if (drawConf.x2Data != null && drawConf.y2Data != null)
-                            {
-                                var x0 = x;
-                                var x1 = Number(e[colNames[drawConf.x2Data]]);
-                                var y0 = y;
-                                var y1 = Number(e[colNames[drawConf.y2Data]]);
-                                var normx0 = conf.xTransform(x0);
-                                var normx1 = conf.xTransform(x1);
-                                var normy0 = conf.yTransform(y0);
-                                var normy1 = conf.yTransform(y1);
-                                var screenx0 = normx0 * conf.plotWidth;
-                                var screenx1 = normx1 * conf.plotWidth;
-                                var screeny0 = (1.0 - normy0) * conf.plotHeight;
-                                var screeny1 = (1.0 - normy1) * conf.plotHeight;
-
-                                if (drawConf.shape === "rect")
-                                {
-                                    t = g.append("rect").attr("width", Math.abs(screenx1 - screenx0)).attr("height",
-                                            Math.abs(screeny0 - screeny1)).attr("x", Math.min(screenx0, screenx1)).attr("y", Math.min(screeny0, screeny1));
-                                }
-                            } else if (drawConf.realSize == null)
-                            {
-                                var screenx = normx * conf.plotWidth;
-                                var screeny = (1.0 - normy) * conf.plotHeight;
-                                if (isNaN(screenx) || isNaN(screeny))
-                                    continue;
-
-                                if (drawConf.shape === "circle")
-                                {
-                                    t = g.append("circle").attr("r", drawConf.size).attr("cx", screenx).attr("cy", screeny);
-
-                                } else if (drawConf.shape === "rect")
-                                {
-                                    t = g.append("rect").attr("width", drawConf.size).attr("height", drawConf.size).attr("x", screenx - drawConf.size / 2.0).attr("y", screeny - drawConf.size / 2.0);
-                                }
-                            } else
-                            {
-                                var x0 = x - drawConf.realSize[0] / 2.0;
-                                var x1 = x + drawConf.realSize[0] / 2.0;
-                                var y0 = y - drawConf.realSize[1] / 2.0;
-                                var y1 = y + drawConf.realSize[1] / 2.0;
-                                var normx0 = conf.xTransform(x0);
-                                var normx1 = conf.xTransform(x1);
-                                var normy0 = conf.yTransform(y0);
-                                var normy1 = conf.yTransform(y1);
-                                var screenx0 = normx0 * conf.plotWidth;
-                                var screenx1 = normx1 * conf.plotWidth;
-                                var screeny0 = (1.0 - normy0) * conf.plotHeight;
-                                var screeny1 = (1.0 - normy1) * conf.plotHeight;
-
-                                if (drawConf.shape === "rect")
-                                {
-                                    t = g.append("rect").attr("width", screenx1 - screenx0).attr("height", screeny0 - screeny1).attr("x", screenx0).attr("y", screeny1);
-                                }
-                            }
-
-                            if (t != null && cinterp != null)
-                                t.attr("fill", cinterp(z));
-                        }
-                    } else if (drawConf.type === "line")
-                    {
-                        var startIndex = 0;
-                        while (startIndex < data.length)
-                        {
-                            var sb = [];
-                            var index = 0;
-                            for (; startIndex < data.length; startIndex++)
-                            {
-                                var e = data[startIndex];
-                                var x = e[colNames[drawConf.xData]];
-                                var y = e[colNames[drawConf.yData]];
-                                var normx = conf.xTransform(x);
-                                var normy = conf.yTransform(y);
-                                if (!isFinite(x) || !isFinite(y) || !isFinite(normx) || !isFinite(normy) || normx < 0 || normx > 1 || normy < 0 || normy > 1)
-                                {
-                                    startIndex++;
-                                    break; // start new line
-                                }
-                                var screenx = normx * conf.plotWidth;
-                                var screeny = (1.0 - normy) * conf.plotHeight;
-
-                                sb.push(index == 0 ? "M" : " L");
-                                sb.push(screenx + " " + screeny);
-                                index++;
-                            }
-                            g.append("path").attr("d", sb.join("")).attr("style", "fill:none; stroke:" + drawConf.color + "; stroke-width:" + drawConf.size + "px");
-                        }
-                    } else if (drawConf.type == "errorBars")
-                    {
-                        var css = "fill:none; stroke:" + drawConf.color + "; stroke-width:" + drawConf.errorBarThickness + "px";
-                        for (var i = 0; i < data.length; i++)
-                        {
-                            var e = data[i];
-                            var x = Number(e[colNames[drawConf.xData]]);
-                            var y = Number(e[colNames[drawConf.yData]]);
-                            var z = Number(e[colNames[drawConf.zData]]);
-                            if (isNaN(z))
-                                continue;
-
-                            var normx = conf.xTransform(x);
-
-                            var normy = conf.yTransform(y);
-                            var normyL = conf.yTransform(y - z);
-                            var normyU = conf.yTransform(y + z);
-
-                            if (normx < 0 || normx > 1 || normy < 0 || normy > 1)
-                                continue;
-                            var screenx = normx * conf.plotWidth;
-
-                            var screenyL = (1.0 - normyL) * conf.plotHeight;
-                            var screenyU = (1.0 - normyU) * conf.plotHeight;
-
-                            g.append("path").attr("d", "M" + screenx + " " + screenyL + " L" + screenx + " " + screenyU).attr("style", css);
-
-                            if (drawConf.errorCrossBarWidth > 0)
-                            {
-                                var w = drawConf.errorCrossBarWidth / 2.0;
-                                g.append("path").attr("d", "M" + (screenx - w) + " " + screenyL + " L" + (screenx + w) + " " + screenyL).attr("style", css);
-                                g.append("path").attr("d", "M" + (screenx - w) + " " + screenyU + " L" + (screenx + w) + " " + screenyU).attr("style", css);
-                            }
-                        }
-                    } else if (drawConf.type == "errorBarsAbs")
-                    {
-                        var css = "fill:none; stroke:" + drawConf.color + "; stroke-width:" + drawConf.errorBarThickness + "px";
-                        for (var i = 0; i < data.length; i++)
-                        {
-                            var e = data[i];
-                            var x = Number(e[colNames[drawConf.xData]]);
-                            var y = Number(e[colNames[drawConf.yData]]);
-                            var z1 = Number(e[colNames[drawConf.zData]]);
-                            var z2 = Number(e[colNames[drawConf.z2Data]]);
-                            if (isNaN(z1) || isNaN(z2))
-                                continue;
-
-                            var normx = conf.xTransform(x);
-
-                            var normy = conf.yTransform(y);
-                            var normyL = conf.yTransform(Math.min(z1, z2));
-                            var normyU = conf.yTransform(Math.max(z1, z2));
-
-                            if (normx < 0 || normx > 1 || normy < 0 || normy > 1)
-                                continue;
-                            var screenx = normx * conf.plotWidth;
-
-                            var screenyL = (1.0 - normyL) * conf.plotHeight;
-                            var screenyU = (1.0 - normyU) * conf.plotHeight;
-
-                            g.append("path").attr("d", "M" + screenx + " " + screenyL + " L" + screenx + " " + screenyU).attr("style", css);
-
-                            if (drawConf.errorCrossBarWidth > 0)
-                            {
-                                var w = drawConf.errorCrossBarWidth / 2.0;
-                                g.append("path").attr("d", "M" + (screenx - w) + " " + screenyL + " L" + (screenx + w) + " " + screenyL).attr("style", css);
-                                g.append("path").attr("d", "M" + (screenx - w) + " " + screenyU + " L" + (screenx + w) + " " + screenyU).attr("style", css);
-                            }
-                        }
-                    } else if (drawConf.type == "area")
-                    {
-                        var sb = [];
-                        var index = 0;
-                        for (var i = 0; i < data.length * 2; i++)
-                        {
-                            var j = i >= data.length ? data.length - 1 - (i - data.length) : i;
-
-                            var e = data[j];
-                            var x = Number(e[colNames[drawConf.xData]]);
-                            var y = i >= data.length ? Number(e[colNames[drawConf.zData]]) : Number(e[colNames[drawConf.yData]]);
-                            if (!isFinite(x) || !isFinite(y))
-                                continue;
-                            var normx = conf.xTransform(x);
-                            var normy = conf.yTransform(y);
-                            var screenx = normx * conf.plotWidth;
-                            var screeny = (1.0 - normy) * conf.plotHeight;
-
-                            sb.push(index == 0 ? "M" : " L");
-                            sb.push(screenx + " " + screeny);
-
-                            index++;
-                        }
-                        sb.push(" Z");
-                        g.append("path").attr("d", sb.join("")).attr("style", "fill:" + drawConf.color + "; stroke:none");
-                    }
+                    KoralPlot.draw(this, conf, drawConf, data);
                 });
 
-                $(this).find("g[data-config]").each(function (i, v)
+                // legends
+                gsWithConf.each(function (i, v)
                 {
                     var drawConf = Koral.getJsonDataAttribute(this, "config", KoralPlot.plotDrawDefaults);
                     if (drawConf.colorLegend && drawConf.colorMapper)
@@ -2640,6 +2409,7 @@ var KoralPlot = {
                         gl.append("text").text(drawConf.colorLegend.label).classed("plotText legendText", true).attr("x", 5).attr("y", 16);
 
                         var cmid = "cm_" + Koral.uuid();
+                        var defs = svg.insert("defs", ":first-child");
                         var lg = defs.append("linearGradient").attr("id", cmid).attr("y1", "100%").attr("x2", "0%").attr("y2", "0%");
                         var inp = drawConf.colorMapper.in;
                         var maxIn = inp[inp.length - 1];
@@ -2680,7 +2450,7 @@ var KoralPlot = {
                         legendIndex++;
                     }
 
-                    $(this).find("g[data-config]").each(function (i, v)
+                    gsWithConf.each(function (i, v)
                     {
                         var drawConf = Koral.getJsonDataAttribute(this, "config", KoralPlot.plotDrawDefaults);
 
@@ -2720,8 +2490,311 @@ var KoralPlot = {
                         g.attr("transform", "translate(" + x + "," + y + ")");
                     }
                 }
+            };
+
+            part.find("svg.plot").each(initPlot);
+            part.find("svg.plot").each((index, el) => {
+            	$(el).find("g.inset").each(initPlot);
+            });
+            
+            // step 4: arrange figures
+            part.find("figure").each(function (index, value)
+            {
+                var children = $(this).children("svg, img, object");
+                if (children.length > 1)
+                {
+                    var index = 0;
+                    children.each(function (i, v)
+                    {
+                        $(this).wrap("<div style='float:left'></div>");
+
+                        if ($(this).prop("tagName") === "svg")
+                        {
+                            var svg = d3.select($(this).get(0));
+                            var letter = String.fromCharCode("A".charCodeAt(0) + index);
+                            
+                            var yOffset = 24;
+                            var viewBox = this.getAttribute("viewBox");
+                            if (viewBox != null)
+                            {
+                            	var v = viewBox.split(" ");
+                            	if (v.length == 4)
+                            	{
+                            		yOffset += parseInt(v[1]);
+                            	}           	
+                            }
+
+                            svg.append("text").text(letter).classed("figureLetter", true).attr("x", -48).attr("y", yOffset);
+                        } else
+                        {
+                            var letter = String.fromCharCode("a".charCodeAt(0) + index);
+                            $(this).parent().append("<p style='margin-left: 3rem'>(" + letter + ")</p>");
+                        }
+                        index++;
+                    });
+                    $(this).children("figcaption").css("clear", "left");
+                }
             });
         });
+    },
+    
+    filterRows: function(drawConf, data)
+    {
+    	if (drawConf.rows != null)
+        {
+    		var colNames = Object.getOwnPropertyNames(data[0]);
+            var d = [];
+            var col = colNames[drawConf.rows.column];
+            for (var i = 0; i < data.length; i++)
+            {
+                var e = data[i];
+                if (e[col] === drawConf.rows.equals)
+                {
+                    d.push(e);
+                }
+            }
+            data = d;
+        }
+    	return data;
+    },
+    
+    draw: function (domPart, conf, drawConf, data)
+    {
+        var g = d3.select(domPart);
+        if (drawConf.color) g.attr("fill", drawConf.color);
+        
+        data = KoralPlot.filterRows(drawConf, data);
+    	
+    	var drawFunc = null;
+    	switch (drawConf.type)
+    	{
+    	case "points": drawFunc = KoralPlot.drawPoints; break;
+    	case "line": drawFunc = KoralPlot.drawLine; break;
+    	case "errorBars": drawFunc = KoralPlot.drawErrorBars; break;
+    	case "errorBarsAbs": drawFunc = KoralPlot.drawErrorBarsAbs; break;
+    	case "area": drawFunc = KoralPlot.drawArea; break;
+    	}
+    	
+    	if (drawFunc && data.length > 0) drawFunc(domPart, conf, drawConf, data);
+    },
+    
+    drawPoints: function(domPart, conf, drawConf, data)
+    {
+    	var g = d3.select(domPart);
+    	var colNames = Object.getOwnPropertyNames(data[0]);
+        var cinterp = drawConf.colorMapper != null ? d3.scale.linear().domain(drawConf.colorMapper.in).interpolate(d3.interpolateRgb).range(drawConf.colorMapper.out) : null;
+
+        for (var i = 0; i < data.length; i++)
+        {
+            var e = data[i];
+            var x = Number(e[colNames[drawConf.xData]]);
+            var y = Number(e[colNames[drawConf.yData]]);
+            var z = Number(e[colNames[drawConf.zData]]);
+            if (isNaN(x) || isNaN(y))
+                continue;
+            var normx = conf.xTransform(x);
+            var normy = conf.yTransform(y);
+            if (normx < 0 || normx > 1 || normy < 0 || normy > 1 || isNaN(normx) || isNaN(normx))
+                continue;
+
+            var t = null;
+            if (drawConf.x2Data != null && drawConf.y2Data != null)
+            {
+                var x0 = x;
+                var x1 = Number(e[colNames[drawConf.x2Data]]);
+                var y0 = y;
+                var y1 = Number(e[colNames[drawConf.y2Data]]);
+                var normx0 = conf.xTransform(x0);
+                var normx1 = conf.xTransform(x1);
+                var normy0 = conf.yTransform(y0);
+                var normy1 = conf.yTransform(y1);
+                var screenx0 = normx0 * conf.plotWidth;
+                var screenx1 = normx1 * conf.plotWidth;
+                var screeny0 = (1.0 - normy0) * conf.plotHeight;
+                var screeny1 = (1.0 - normy1) * conf.plotHeight;
+
+                if (drawConf.shape === "rect")
+                {
+                    t = g.append("rect").attr("width", Math.abs(screenx1 - screenx0)).attr("height",
+                            Math.abs(screeny0 - screeny1)).attr("x", Math.min(screenx0, screenx1)).attr("y", Math.min(screeny0, screeny1));
+                }
+            } else if (drawConf.realSize == null)
+            {
+                var screenx = normx * conf.plotWidth;
+                var screeny = (1.0 - normy) * conf.plotHeight;
+                if (isNaN(screenx) || isNaN(screeny))
+                    continue;
+
+                if (drawConf.shape === "circle")
+                {
+                    t = g.append("circle").attr("r", drawConf.size).attr("cx", screenx).attr("cy", screeny);
+
+                } else if (drawConf.shape === "rect")
+                {
+                    t = g.append("rect").attr("width", drawConf.size).attr("height", drawConf.size).attr("x", screenx - drawConf.size / 2.0).attr("y", screeny - drawConf.size / 2.0);
+                }
+            } else
+            {
+                var x0 = x - drawConf.realSize[0] / 2.0;
+                var x1 = x + drawConf.realSize[0] / 2.0;
+                var y0 = y - drawConf.realSize[1] / 2.0;
+                var y1 = y + drawConf.realSize[1] / 2.0;
+                var normx0 = conf.xTransform(x0);
+                var normx1 = conf.xTransform(x1);
+                var normy0 = conf.yTransform(y0);
+                var normy1 = conf.yTransform(y1);
+                var screenx0 = normx0 * conf.plotWidth;
+                var screenx1 = normx1 * conf.plotWidth;
+                var screeny0 = (1.0 - normy0) * conf.plotHeight;
+                var screeny1 = (1.0 - normy1) * conf.plotHeight;
+
+                if (drawConf.shape === "rect")
+                {
+                    t = g.append("rect").attr("width", screenx1 - screenx0).attr("height", screeny0 - screeny1).attr("x", screenx0).attr("y", screeny1);
+                }
+            }
+
+            if (t != null && cinterp != null)
+                t.attr("fill", cinterp(z));
+        }
+    },
+    
+    drawLine: function(domPart, conf, drawConf, data)
+    {
+    	var g = d3.select(domPart);
+    	var colNames = Object.getOwnPropertyNames(data[0]);
+        var startIndex = 0;
+        while (startIndex < data.length)
+        {
+            var sb = [];
+            var index = 0;
+            for (; startIndex < data.length; startIndex++)
+            {
+                var e = data[startIndex];
+                var x = e[colNames[drawConf.xData]];
+                var y = e[colNames[drawConf.yData]];
+                var normx = conf.xTransform(x);
+                var normy = conf.yTransform(y);
+                if (!isFinite(x) || !isFinite(y) || !isFinite(normx) || !isFinite(normy) || normx < 0 || normx > 1 || normy < 0 || normy > 1)
+                {
+                    startIndex++;
+                    break; // start new line
+                }
+                var screenx = normx * conf.plotWidth;
+                var screeny = (1.0 - normy) * conf.plotHeight;
+
+                sb.push(index == 0 ? "M" : " L");
+                sb.push(screenx + " " + screeny);
+                index++;
+            }
+            g.append("path").attr("d", sb.join("")).attr("style", "fill:none; stroke:" + drawConf.color + "; stroke-width:" + drawConf.size + "px");
+        }
+    },
+    
+    drawErrorBars: function(domPart, conf, drawConf, data)
+    {
+    	var g = d3.select(domPart);
+    	var colNames = Object.getOwnPropertyNames(data[0]);
+        var css = "fill:none; stroke:" + drawConf.color + "; stroke-width:" + drawConf.errorBarThickness + "px";
+        for (var i = 0; i < data.length; i++)
+        {
+            var e = data[i];
+            var x = Number(e[colNames[drawConf.xData]]);
+            var y = Number(e[colNames[drawConf.yData]]);
+            var z = Number(e[colNames[drawConf.zData]]);
+            if (isNaN(z))
+                continue;
+
+            var normx = conf.xTransform(x);
+
+            var normy = conf.yTransform(y);
+            var normyL = conf.yTransform(y - z);
+            var normyU = conf.yTransform(y + z);
+
+            if (normx < 0 || normx > 1 || normy < 0 || normy > 1)
+                continue;
+            var screenx = normx * conf.plotWidth;
+
+            var screenyL = (1.0 - normyL) * conf.plotHeight;
+            var screenyU = (1.0 - normyU) * conf.plotHeight;
+
+            g.append("path").attr("d", "M" + screenx + " " + screenyL + " L" + screenx + " " + screenyU).attr("style", css);
+
+            if (drawConf.errorCrossBarWidth > 0)
+            {
+                var w = drawConf.errorCrossBarWidth / 2.0;
+                g.append("path").attr("d", "M" + (screenx - w) + " " + screenyL + " L" + (screenx + w) + " " + screenyL).attr("style", css);
+                g.append("path").attr("d", "M" + (screenx - w) + " " + screenyU + " L" + (screenx + w) + " " + screenyU).attr("style", css);
+            }
+        }
+    },
+    
+    drawErrorBarsAbs: function(domPart, conf, drawConf, data)
+    {
+    	var g = d3.select(domPart);
+    	var colNames = Object.getOwnPropertyNames(data[0]);
+        var css = "fill:none; stroke:" + drawConf.color + "; stroke-width:" + drawConf.errorBarThickness + "px";
+        for (var i = 0; i < data.length; i++)
+        {
+            var e = data[i];
+            var x = Number(e[colNames[drawConf.xData]]);
+            var y = Number(e[colNames[drawConf.yData]]);
+            var z1 = Number(e[colNames[drawConf.zData]]);
+            var z2 = Number(e[colNames[drawConf.z2Data]]);
+            if (isNaN(z1) || isNaN(z2))
+                continue;
+
+            var normx = conf.xTransform(x);
+
+            var normy = conf.yTransform(y);
+            var normyL = conf.yTransform(Math.min(z1, z2));
+            var normyU = conf.yTransform(Math.max(z1, z2));
+
+            if (normx < 0 || normx > 1 || normy < 0 || normy > 1)
+                continue;
+            var screenx = normx * conf.plotWidth;
+
+            var screenyL = (1.0 - normyL) * conf.plotHeight;
+            var screenyU = (1.0 - normyU) * conf.plotHeight;
+
+            g.append("path").attr("d", "M" + screenx + " " + screenyL + " L" + screenx + " " + screenyU).attr("style", css);
+
+            if (drawConf.errorCrossBarWidth > 0)
+            {
+                var w = drawConf.errorCrossBarWidth / 2.0;
+                g.append("path").attr("d", "M" + (screenx - w) + " " + screenyL + " L" + (screenx + w) + " " + screenyL).attr("style", css);
+                g.append("path").attr("d", "M" + (screenx - w) + " " + screenyU + " L" + (screenx + w) + " " + screenyU).attr("style", css);
+            }
+        }
+    },
+    
+    drawArea: function(domPart, conf, drawConf, data)
+    {
+    	var g = d3.select(domPart);
+    	var colNames = Object.getOwnPropertyNames(data[0]);
+        var sb = [];
+        var index = 0;
+        for (var i = 0; i < data.length * 2; i++)
+        {
+            var j = i >= data.length ? data.length - 1 - (i - data.length) : i;
+
+            var e = data[j];
+            var x = Number(e[colNames[drawConf.xData]]);
+            var y = i >= data.length ? Number(e[colNames[drawConf.zData]]) : Number(e[colNames[drawConf.yData]]);
+            if (!isFinite(x) || !isFinite(y))
+                continue;
+            var normx = conf.xTransform(x);
+            var normy = conf.yTransform(y);
+            var screenx = normx * conf.plotWidth;
+            var screeny = (1.0 - normy) * conf.plotHeight;
+
+            sb.push(index == 0 ? "M" : " L");
+            sb.push(screenx + " " + screeny);
+
+            index++;
+        }
+        sb.push(" Z");
+        g.append("path").attr("d", sb.join("")).attr("style", "fill:" + drawConf.color + "; stroke:none");
     }
 };
 
