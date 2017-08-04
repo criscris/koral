@@ -2513,6 +2513,7 @@ var KoralPlot = {
                             var svg = d3.select($(this).get(0));
                             var letter = String.fromCharCode("A".charCodeAt(0) + index);
                             
+                            var xOffset = 8;
                             var yOffset = 24;
                             var viewBox = this.getAttribute("viewBox");
                             if (viewBox != null)
@@ -2520,11 +2521,12 @@ var KoralPlot = {
                             	var v = viewBox.split(" ");
                             	if (v.length == 4)
                             	{
+                                    xOffset += parseInt(v[0]);
                             		yOffset += parseInt(v[1]);
                             	}           	
                             }
 
-                            svg.append("text").text(letter).classed("figureLetter", true).attr("x", -48).attr("y", yOffset);
+                            svg.append("text").text(letter).classed("figureLetter", true).attr("x", xOffset).attr("y", yOffset);
                         } else
                         {
                             var letter = String.fromCharCode("a".charCodeAt(0) + index);
