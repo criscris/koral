@@ -331,10 +331,13 @@ article table th, article > table td {
 }
 
 article table th:first-child, 
-article table th:last-child, 
-article table td:first-child, 
+article table td:first-child {
+	padding:0 0.5rem 0 0;
+}
+
+article table th:last-child,
 article table td:last-child {
-  padding: 0;
+	padding:0 0 0 0.5rem;
 }
 
 article table td.number {
