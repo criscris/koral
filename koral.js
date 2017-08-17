@@ -113,6 +113,9 @@ var Koral = {
 
     loadCSV: function(url, callback)
     {
+        var prefix = $("article").first().data("urlprefix"); // does not deal with the case of several articles in one html document
+        if (prefix != null && prefix.length > 0) url = prefix + url;
+
         $.ajax({
             url: url,
         }).done(data =>
@@ -140,6 +143,23 @@ var KoralParagraph = function (dom)
     {
         // rerender math
         MathJax.Hub.Queue(["Typeset", MathJax.Hub, this.leftCol.get(0)]);
+
+
+        //  add url prefix
+        var part = this.leftCol;
+        var prefix = part.closest("article").data("urlprefix");
+        if (prefix != null && prefix.length > 0)
+        {
+            part.find("[data-url]").each(function (i, v)
+            {
+                $(this).data("url", prefix + $(this).data("url"));
+            });
+
+            part.find("image[href]").each(function (i, v)
+            {
+                $(this).attr("href", prefix + $(this).attr("href"));
+            });
+        }
 
         // create plots
         KoralPlot.processPlots(this.leftCol.get(0));
@@ -2094,20 +2114,6 @@ var KoralPlot = {
 
         if (part.find("figure").length == 0 && part.find("table").length == 0)
             return;
-
-        // step 0b: urls
-        $("article").each(function (index, value)  // bug? what happens with several articles? use only article that is parent 
-        {
-            var prefix = $(this).data("urlprefix");
-            if (prefix != null && prefix.length > 0)
-            {
-                part.find("[data-url]").each(function (i, v)
-                {
-                    $(this).data("url", prefix + $(this).data("url"));
-                });
-            }
-        });
-
 
         // step 1: load all csv data
         var urls = {};
