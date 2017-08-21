@@ -318,7 +318,7 @@ var KoralUI = {
                 "</svg>" +
                 "</div>" +
                 "<div id='mainMenu' style='display:none'>" + 
-                "<svg width='148' height='" + (entryHeight * entries.length) + "'>" +
+                "<svg width='168' height='" + (entryHeight * entries.length) + "'>" +
                 "<style>" +
                 ".menuT { color: rgb(0,0,0); font-family: 'Arial'; font-size: 16px; } " +
                 ".menuE { cursor:pointer; } " +
@@ -327,7 +327,7 @@ var KoralUI = {
                 "</style>" +
                 "<g transform='translate(8, 0)'>" +
                 "<g id='menuEntries'></g>" +
-                "<rect width='140' height='" + (entryHeight * entries.length) + "' style='fill:none; stroke:rgb(153, 153, 153); stroke-width:1px'></rect>" +
+                "<rect width='160' height='" + (entryHeight * entries.length) + "' style='fill:none; stroke:rgb(153, 153, 153); stroke-width:1px'></rect>" +
                 "</g>" +
                 "</svg>" +
                 "</div>" +
@@ -340,7 +340,7 @@ var KoralUI = {
                     .attr("transform", "translate(0, " + (entryHeight * i) + ")")
                     .classed("menuE", true);
             g.append("rect")
-                    .attr("width", "140")
+                    .attr("width", "160")
                     .attr("height", "32")
                     .classed("menuR", true);
             var text = g.append("text")
@@ -1239,6 +1239,7 @@ var KoralInternal = {
         }
         
         menuEntries.push({label: "Navigate", onclick: KoralInternal.navigate});
+        menuEntries.push({label: "Document statistics", onclick: KoralInternal.stats});
         menuEntries.push({label: "Download HTML", onclick: KoralInternal.downloadHTML});
         menuEntries.push({label: "Print / PDF", onclick: KoralInternal.exportAsPDF});
         //menuEntries.push({ label:"Export as LaTeX", onclick: KoralInternal.exportAsLatex });
@@ -1903,6 +1904,61 @@ var KoralInternal = {
         	.appendTo(p);
         });	
     	KoralUI.dialog("Navigate", p.get(0), []);
+    },
+     
+    wordCount: function()
+    {
+    	var countWords = function(s)
+    	{
+    		s = s.replace(/(^\s*)|(\s*$)/gi,"");//exclude  start and end white-space
+    		s = s.replace(/[ ]{2,}/gi," ");//2 or more space to 1
+    		s = s.replace(/\n /,"\n"); // exclude newline with a start spacing
+    		return s.split(' ').length; 
+    	}
+    	
+    	var counts = [0, 0, 0, 0]; // wordcount, wc - fig, charcount, cc - fig
+        for (var i=0; i<KoralInternal.articles.length; i++)
+        {
+            var a = KoralInternal.articles[i];
+            for (var j = 0; j < KoralInternal.articles[i].paragraphs.length; j++)
+            {
+                var p = a.paragraphs[j];
+                var text = p.leftCol.text();
+                counts[2] += text.length;
+                counts[0] += countWords(text);
+                
+                p.leftCol.find("figcaption").each(function (index, value)
+                {
+                	var text = $(this).text();
+                	counts[3] -= text.length;
+                	counts[1] -= countWords(text);
+                });
+            }
+        }
+        
+        counts[1] += counts[0];
+        counts[3] += counts[2];
+    	return counts;
+    },
+    
+    stats: function()
+    {
+    	var counts = KoralInternal.wordCount();
+    	
+    	var p = $("<div class='navigator'></div>");
+    	
+    	$("<div></div>")
+    	.text(counts[0] + " words (" + counts[1] + " without figure captions).")
+    	.addClass(this.nodeName)
+    	.appendTo(p);
+    	
+    	$("<div></div>")
+    	.text(counts[2] + " characters (" + counts[3] + " without figure captions).")
+    	.addClass(this.nodeName)
+    	.appendTo(p);
+        
+        
+    	KoralUI.dialog("Document statistics", p.get(0), []);
     },
 
     getDocumentLocal: function (callback)
