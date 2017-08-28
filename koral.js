@@ -1923,6 +1923,11 @@ var KoralInternal = {
             for (var j = 0; j < KoralInternal.articles[i].paragraphs.length; j++)
             {
                 var p = a.paragraphs[j];
+                if (p.leftCol.find(".skipWordCount").length > 0)
+                {
+                	continue;
+                }
+                
                 var text = p.leftCol.text();
                 counts[2] += text.length;
                 counts[0] += countWords(text);
