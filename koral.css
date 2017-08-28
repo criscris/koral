@@ -325,19 +325,18 @@ article table tr:last-child {
 	 border-bottom: 1px solid black;
 }
 
-
-article table th, article > table td {
-	padding:0 0.5rem 0 0.5rem;
-}
-
 article table th:first-child, 
 article table td:first-child {
-	padding:0 0.5rem 0 0;
+	padding-left:0;
 }
 
 article table th:last-child,
 article table td:last-child {
-	padding:0 0 0 0.5rem;
+	padding-right:0;
+}
+
+article table th, article table td {
+	padding:0 0.5rem 0 0.5rem;
 }
 
 article table td.number {
