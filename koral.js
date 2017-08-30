@@ -2056,6 +2056,8 @@ var KoralInternal = {
 
 
 var KoralPlot = {
+	svgScale: 1.0,	
+		
     tableDefaults: {
         cols: undefined, // which columns to display; array of 0-based column indices
         toFixed: undefined // whether numbers shall be rounded; number of digits to be rounded
@@ -2391,7 +2393,7 @@ var KoralPlot = {
                 {
                     var width = conf.left + conf.plotWidth + conf.right;
                     var height = conf.top + conf.plotHeight + conf.bottom;
-                	svg.attr("width", width).attr("height", height).attr("viewBox", (-conf.left) + " " + (-conf.top) + " " + width + " " + height);
+                	svg.attr("width", width * KoralPlot.svgScale).attr("height", height * KoralPlot.svgScale).attr("viewBox", (-conf.left) + " " + (-conf.top) + " " + width + " " + height);
                 }
 
 
