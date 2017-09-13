@@ -2044,6 +2044,8 @@ var KoralInternal = {
     },
     
     downloadFigures: function () {
+    	
+    	// may not include everything because of CORS
     	var cssDeclaration_ = () =>
     	{
     		var css = "";
@@ -2058,9 +2060,9 @@ var KoralInternal = {
     		}
     		return css;
     	};
-    	var cssDeclaration = cssDeclaration_();
     	
-    	var convertToPngAndDownload = (elem, downloadName, minSize) => 
+    	
+    	var convertToPngAndDownload = (elem, downloadName, minSize, cssDeclaration) => 
     	{
     		// adapt svg to at least minimum size, include all css. 
     		var svg_ = $(elem);
@@ -2113,28 +2115,35 @@ var KoralInternal = {
     		$(element).data("count", 0);
     	});
     	
-    	$("svg").each( function( index, element )
-    	{
-    		var svg = $(element);
-    		var fig = svg.closest("figure");
-    		if (fig.length == 0) return;
-    		
-    		
-    		var figIndex = fig.data("index") + 1;
-    		var id = fig.attr("id");
-  
-    		fig.data("count", fig.data("count") + 1);
-    		var number = fig.data("count");
-    		
-    		var fl = svg.find(".figureLetter");
-    		if (fl.length > 0) number = fl.first().get(0).innerHTML;
-    		
-    		var fi = "" + figIndex;
-    		if (fi.length == 1) fi = "0" + fi;
-    		
-    		var name = "fig" + fi + "_" + (id != null ? id + "_" : "") + number + ".png";
-    		convertToPngAndDownload(element, name, 1080);
-    	});
+		$.ajax({
+			url: KoralInternal.koralUrl() + "koral.css",
+			dataType: "text",
+			success: function(cssDeclaration)
+			{
+		    	$("svg").each( function( index, element )
+    	    	{
+    	    		var svg = $(element);
+    	    		var fig = svg.closest("figure");
+    	    		if (fig.length == 0) return;
+    	    		
+    	    		
+    	    		var figIndex = fig.data("index") + 1;
+    	    		var id = fig.attr("id");
+    	  
+    	    		fig.data("count", fig.data("count") + 1);
+    	    		var number = fig.data("count");
+    	    		
+    	    		var fl = svg.find(".figureLetter");
+    	    		if (fl.length > 0) number = fl.first().get(0).innerHTML;
+    	    		
+    	    		var fi = "" + figIndex;
+    	    		if (fi.length == 1) fi = "0" + fi;
+    	    		
+    	    		var name = "fig" + fi + "_" + (id != null ? id + "_" : "") + number + ".png";
+    	    		convertToPngAndDownload(element, name, 1080, cssDeclaration);
+    	    	});
+			}
+		});
     },
 
     exportAsPDF: function () {
