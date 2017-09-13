@@ -1241,6 +1241,7 @@ var KoralInternal = {
         menuEntries.push({label: "Navigate", onclick: KoralInternal.navigate});
         menuEntries.push({label: "Document statistics", onclick: KoralInternal.stats});
         menuEntries.push({label: "Download HTML", onclick: KoralInternal.downloadHTML});
+        menuEntries.push({label: "Download figures", onclick: KoralInternal.downloadFigures});
         menuEntries.push({label: "Print / PDF", onclick: KoralInternal.exportAsPDF});
         //menuEntries.push({ label:"Export as LaTeX", onclick: KoralInternal.exportAsLatex });
         
@@ -2024,7 +2025,6 @@ var KoralInternal = {
 
     downloadHTML: function () {
         KoralInternal.getDocumentLocal(function (str) {
-
             var relURL = KoralInternal.koralScriptURL.replace(/^(?:\/\/|[^\/]+)*\//, "");
             var reg = new RegExp("src=\".*?" + relURL + "\"");
             str = str.replace(reg, "src=\"" + KoralInternal.koralScriptURL + "\"");
@@ -2041,6 +2041,101 @@ var KoralInternal = {
                 window.URL.revokeObjectURL(url);
             }, 0);
         });
+    },
+    
+    downloadFigures: function () {
+    	var cssDeclaration = () =>
+    	{
+    		var css = "";
+    		for (var i=0; i<document.styleSheets.length; i++)
+    		{
+    			if (document.styleSheets[i].href != null && document.styleSheets[i].href.endsWith("koral.css"))
+    			{
+    				var rules = document.styleSheets[i].rules || document.styleSheets[i].cssRules;
+    				for (var j=0; j<rules.length; j++)
+    				{
+    					css += rules[j].cssText + "\n";
+    				}
+    			}
+    		}
+    		return css;
+    	};
+    	
+    	var convertToPngAndDownload = (elem, downloadName, minSize) => 
+    	{
+    		// adapt svg to at least minimum size, include all css. 
+    		var svg_ = $(elem);
+    		var svg = svg_.clone();
+    		var w = svg.attr("width");
+    		var h = svg.attr("height");
+    		if (w < minSize || h < minSize)
+    		{
+    			s = Math.max(minSize / w, minSize / h);
+    			w = w*s;
+    			h = h*s;
+    			svg.attr("width", w);
+    			svg.attr("height", h);
+    		}
+    		svg.css("background-color", "rgb(255,255,255)");
+    		svg.find(".figureLetter").remove();
+    		$("<style></style>")
+    		.text(cssDeclaration()).appendTo(svg);
+    		var svgText = new XMLSerializer().serializeToString(svg.get(0));
+    		var svgBlob = new Blob([svgText], {type:"image/svg+xml;charset=utf-8"});
+    		
+    		var canvas = $("<canvas></canvas>")
+			.attr("width", w)
+			.attr("height", h)
+			.css("display", "none");
+    		canvas.insertAfter(svg_);
+    		var ctx = canvas.get(0).getContext("2d");
+    		
+    		var domURL = self.URL || self.webkitURL || self;
+    		var url = domURL.createObjectURL(svgBlob);
+    		var img = new Image();
+    		img.onload =  function () {
+    			ctx.drawImage(this, 0, 0);     
+    			domURL.revokeObjectURL(url);
+    			
+    			var a = $("<a></a>")
+				.attr("href", canvas.get(0).toDataURL())
+				.attr("download", downloadName)
+			
+				a.insertAfter(svg_);
+    			a.get(0).click();
+    			canvas.remove();
+    			a.remove();
+    		};
+    		img.src = url;
+    	};
+    	
+    	$("figure").each(function( index, element ) {
+    		$(element).data("index", index);
+    		$(element).data("count", 0);
+    	});
+    	
+    	$("svg").each( function( index, element )
+    	{
+    		var svg = $(element);
+    		var fig = svg.closest("figure");
+    		if (fig.length == 0) return;
+    		
+    		
+    		var figIndex = fig.data("index") + 1;
+    		var id = fig.attr("id");
+  
+    		fig.data("count", fig.data("count") + 1);
+    		var number = fig.data("count");
+    		
+    		var fl = svg.find(".figureLetter");
+    		if (fl.length > 0) number = fl.first().get(0).innerHTML;
+    		
+    		var fi = "" + figIndex;
+    		if (fi.length == 1) fi = "0" + fi;
+    		
+    		var name = "fig" + fi + "_" + (id != null ? id + "_" : "") + number + ".png";
+    		convertToPngAndDownload(element, name, 1080);
+    	});
     },
 
     exportAsPDF: function () {
