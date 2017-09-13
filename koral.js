@@ -2044,22 +2044,21 @@ var KoralInternal = {
     },
     
     downloadFigures: function () {
-    	var cssDeclaration = () =>
+    	var cssDeclaration_ = () =>
     	{
     		var css = "";
     		for (var i=0; i<document.styleSheets.length; i++)
     		{
-    			if (document.styleSheets[i].href != null && document.styleSheets[i].href.endsWith("koral.css"))
-    			{
-    				var rules = document.styleSheets[i].rules || document.styleSheets[i].cssRules;
-    				for (var j=0; j<rules.length; j++)
-    				{
-    					css += rules[j].cssText + "\n";
-    				}
-    			}
+				var rules = document.styleSheets[i].rules || document.styleSheets[i].cssRules;
+				if (rules != null)
+					for (var j=0; j<rules.length; j++)
+					{
+						css += rules[j].cssText + "\n";
+					}
     		}
     		return css;
     	};
+    	var cssDeclaration = cssDeclaration_();
     	
     	var convertToPngAndDownload = (elem, downloadName, minSize) => 
     	{
@@ -2079,7 +2078,7 @@ var KoralInternal = {
     		svg.css("background-color", "rgb(255,255,255)");
     		svg.find(".figureLetter").remove();
     		$("<style></style>")
-    		.text(cssDeclaration()).appendTo(svg);
+    		.text(cssDeclaration).appendTo(svg);
     		var svgText = new XMLSerializer().serializeToString(svg.get(0));
     		var svgBlob = new Blob([svgText], {type:"image/svg+xml;charset=utf-8"});
     		
