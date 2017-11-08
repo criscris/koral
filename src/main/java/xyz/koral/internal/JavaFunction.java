@@ -19,11 +19,11 @@ import java.util.stream.Stream;
 
 import com.google.gson.Gson;
 
-import xyz.koral.Arg;
-import xyz.koral.DataSource;
 import xyz.koral.IO;
 import xyz.koral.KoralError;
-import xyz.koral.Table;
+import xyz.koral.compute.config.DataSource;
+import xyz.koral.compute.config.Param;
+import xyz.koral.table.Table;
 
 public class JavaFunction implements KoralFunction
 {
@@ -52,19 +52,19 @@ public class JavaFunction implements KoralFunction
 			NamedSupplier s = null;
 			String name = paramNames[j].getName();
 			
-			Arg arg = descriptor.args.get(name);
+			Param arg = descriptor.params.get(name);
 			if (arg == null) throw new KoralError("Unspecified parameter " + name + " for target " + target);
 			
 			boolean isInterface = params[j].isInterface();
-			if ("param".equals(arg.type) && !isInterface)
+			if (arg.val != null && !isInterface)
 			{
 				String json = gson.toJson(arg.val);
 				Object value = gson.fromJson(json, params[j]);
 				s = new NamedSupplier(null, () -> value);
 			}
-			else if ("source".equals(arg.type))
+			else if (arg.uri != null)
 			{
-				s = new NamedSupplier(arg.val.toString(), input(params[j], paramsG[j], new File(basePath, arg.val.toString()), arg.parallel));
+				s = new NamedSupplier(arg.uri, input(params[j], paramsG[j], new File(basePath, arg.uri), arg.parallel));
 			}
 			
 			if (s == null) throw new KoralError("Could not create a type mapping for parameter " + name + " for target " + target);
@@ -130,7 +130,7 @@ public class JavaFunction implements KoralFunction
 		
 		switch (typeName)
 		{
-		case "xyz.koral.Table": 
+		case "xyz.koral.table.Table": 
 			return () -> Table.csvToData(IO.readCSV(IO.istream(source)));
 		case "java.util.stream.Stream": 
 			Class<?> gclazz = genericClass.apply(gTypeName);

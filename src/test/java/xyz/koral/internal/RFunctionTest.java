@@ -11,11 +11,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import xyz.koral.Arg;
-import xyz.koral.DataSource;
 import xyz.koral.IO;
 import xyz.koral.R;
-import xyz.koral.Table;
+import xyz.koral.compute.config.DataFormat;
+import xyz.koral.compute.config.DataSource;
+import xyz.koral.compute.config.Param;
+import xyz.koral.table.Table;
 
 public class RFunctionTest 
 {
@@ -98,8 +99,8 @@ public class RFunctionTest
 		String outFile = "testOut1.csv";
 		RFunction f = new RFunction();
 		f.init(baseDir, outFile, new DataSource(scriptFile + "::tesfu", "R")
-				.addArg("inframe", new Arg("source", csvFile1))
-				.addArg("j", new Arg("param", j)));
+				.addParam("inframe", Param.create(DataFormat.csv,  csvFile1))
+				.addParam("j", Param.createJson(j)));
 		f.run();
 		
 		Table result = Table.csvToData(IO.readCSV(IO.istream(new File(baseDir, outFile))));
@@ -112,7 +113,7 @@ public class RFunctionTest
 		String outFile = "testOut2.csv";
 		RFunction f = new RFunction();
 		f.init(baseDir, outFile, new DataSource(scriptFile2 + "::tesfu", "R")
-				.addArg("jso", new Arg("param", new B(43))));
+				.addParam("jso", Param.createJson(new B(43))));
 		f.run();
 		
 		Table result = Table.csvToData(IO.readCSV(IO.istream(new File(baseDir, outFile))));

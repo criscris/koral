@@ -5,9 +5,9 @@ import java.io.OutputStream;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import xyz.koral.DataSource;
 import xyz.koral.IO;
-import xyz.koral.Table;
+import xyz.koral.compute.config.DataSource;
+import xyz.koral.table.Table;
 
 public interface KoralFunction
 {

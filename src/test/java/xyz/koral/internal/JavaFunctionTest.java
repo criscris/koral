@@ -17,10 +17,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import xyz.koral.Arg;
-import xyz.koral.DataSource;
 import xyz.koral.IO;
-import xyz.koral.Table;
+import xyz.koral.compute.config.DataFormat;
+import xyz.koral.compute.config.DataSource;
+import xyz.koral.compute.config.Param;
+import xyz.koral.table.Table;
 
 
 public class JavaFunctionTest
@@ -61,7 +62,7 @@ public class JavaFunctionTest
 		{
 			JavaFunction f = new JavaFunction();
 			f.init(baseDir, outFile, 
-					new DataSource("xyz.koral.internal.TestC::func" + l, "java").addArg("a", new Arg("source", jsonlFile1)));
+					new DataSource("xyz.koral.internal.TestC::func" + l, "java").addParam("a", Param.create(DataFormat.jsonl,  jsonlFile1)));
 			f.run();
 			Table result = Table.csvToNumeric(IO.readCSV(IO.istream(new File(baseDir, outFile))));
 			assertEquals_numeric(expected, result);
@@ -76,7 +77,7 @@ public class JavaFunctionTest
 		
 		JavaFunction f = new JavaFunction();
 		f.init(baseDir, outFile, 
-				new DataSource("xyz.koral.internal.TestC::func4", "java").addArg("a", new Arg("source", csvFile1)));
+				new DataSource("xyz.koral.internal.TestC::func4", "java").addParam("a", Param.create(DataFormat.csv, csvFile1)));
 		f.run();
 		Table result = Table.csvToNumeric(IO.readCSV(IO.istream(new File(baseDir, outFile))));
 		assertEquals_numeric(expected, result);
@@ -103,8 +104,8 @@ public class JavaFunctionTest
 		JavaFunction f = new JavaFunction();
 		f.init(baseDir, outFile, 
 				new DataSource("xyz.koral.internal.TestC::func6", "java")
-				.addArg("val1", new Arg("param", "first value"))
-				.addArg("arr", new Arg("param", new int[] { 1, 2, 3, 4 })));
+				.addParam("val1", Param.createJson("first value"))
+				.addParam("arr", Param.createJson(new int[] { 1, 2, 3, 4 })));
 		f.run();
 		A result = IO.readJSON(IO.istream(new File(baseDir, outFile)), A.class);
 		assertTrue(expected.equals(result));
@@ -118,9 +119,9 @@ public class JavaFunctionTest
 		JavaFunction f = new JavaFunction();
 		f.init(baseDir, outFile, 
 				new DataSource("xyz.koral.internal.TestC::func7", "java")
-				.addArg("a", new Arg("source", jsonlFile1))
-				.addArg("skip",  new Arg("param", 1))
-				.addArg("add", new Arg("param", 77)));
+				.addParam("a", Param.create(DataFormat.jsonl, jsonlFile1))
+				.addParam("skip",  Param.createJson(1))
+				.addParam("add",Param.createJson(77)));
 		f.run();
 		Table result = Table.csvToNumeric(IO.readCSV(IO.istream(new File(baseDir, outFile))));	
 		assertEquals_numeric(expected, result);
@@ -134,7 +135,7 @@ public class JavaFunctionTest
 		JavaFunction f = new JavaFunction();
 		f.init(baseDir, outFile, 
 				new DataSource("xyz.koral.internal.TestC::func8", "java")
-				.addArg("a", new Arg("source", jsonlFile1)));
+				.addParam("a", Param.create(DataFormat.jsonl, jsonlFile1)));
 		f.run();
 		List<A> result = IO.readJSONStream(IO.istream(new File(baseDir, outFile)), A.class).collect(Collectors.toList());
 		assertEquals(expected, result);	

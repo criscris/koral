@@ -14,7 +14,7 @@ import org.rosuda.REngine.RServe.RConnection;
 import org.rosuda.REngine.RServe.RserveException;
 import org.rosuda.REngine.RServe.StartRserve;
 
-import xyz.koral.internal.Notifier;
+import xyz.koral.table.Table;
 
 /**
  * in your R IDE:

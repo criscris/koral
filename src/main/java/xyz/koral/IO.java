@@ -61,8 +61,6 @@ import javax.xml.stream.events.XMLEvent;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import xyz.koral.internal.Notifier;
-
 public interface IO 
 {
 	Charset cs = Charset.forName("UTF-8");
@@ -224,6 +222,12 @@ public interface IO
 	static void writeJSON(Object o, OutputStream os)
 	{
 		Gson gson = new Gson();
+		write(gson.toJson(o), os);
+	}
+	
+	static void writeJSON_prettyPrint(Object o, OutputStream os)
+	{
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		write(gson.toJson(o), os);
 	}
 	

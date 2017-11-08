@@ -967,6 +967,7 @@ var KoralInternal = {
         KoralInternal.slides();
         KoralInternal.addBrowser();
         KoralInternal.addFileViewer();
+        KoralInternal.addSignIn();
     },
     
     initSpelling: function() {
@@ -1803,6 +1804,98 @@ var KoralInternal = {
             d3.select("#editToggle").text("Edit");
         }
     },
+    
+    /*
+    signIn: function ()
+    {
+        var p = $("<div></div>").addClass("form", true);
+        p.append($("<label for='username'>Username</label>"));
+        var userField = $("<input autocapitalize='off' autocorrect='off' autofocus='autofocus' tabindex='1' id='username' style='width:100%;' type='text'/>");
+        p.append(userField);
+        
+        p.append($("<label for='password'>Password</label>"));
+        var pwdField = $("<input tabindex='2' id='password' style='width:100%;' type='password'/>");
+        p.append(pwdField);
+
+        var buttons = [{name: "Sign in", onclickfunc: function ()
+        {
+            $.ajax({
+                type: "POST",
+                url: "/?action=signIn",
+                data: { username: $("#username").val(), password: $("#password").val() },
+                success: function (data) 
+                {
+                	KoralUI.popup("Signed in.");
+                },
+                dataType: "json"
+            }).fail(function () {
+                KoralUI.popup("Sign in failed.");
+            });
+            return true;
+        }}];
+        KoralUI.dialog("Sign in", p.get(0), buttons);
+    },
+    */
+
+    signIn: function(username, password, onsuccess)
+    {
+        try
+        {
+            $.ajax({
+                type: "POST",
+                url: "/?action=signIn",
+                data: JSON.stringify({ "username": username,"password": password }),
+                contentType : "application/json"
+            }).done(function() {
+                KoralUI.popup("Signed in successfully.");
+                if (onsuccess != null) onsuccess();
+            }).fail(function() {
+                KoralUI.popup("Not signed in.");
+            });
+        }
+        catch (e) {}
+    },
+    
+    signUp: function ()
+    {
+        var p = $("<div></div>").addClass("form", true);
+        p.append($("<label for='username'>Username</label>"));
+        var userField = $("<input autocapitalize='off' autocorrect='off' autofocus='autofocus' tabindex='1' id='username' style='width:100%;' type='text'/>");
+        p.append(userField);
+        
+        p.append($("<label for='password'>Password</label>"));
+        var pwdField = $("<input tabindex='2' id='password' style='width:100%;' type='password'/>");
+        p.append(pwdField);
+        
+        console.log("cookie");
+        console.log(document.cookie);
+
+        var buttons = [{name: "Sign up", onclickfunc: function ()
+        {
+            $.ajax({
+                type: "POST",
+                url: "/?action=signUp",
+                data: { username: $("#username").val(), password: $("#password").val(), signUpToken: Koral.getUrlParameter("signUpToken") },
+                success: function (data) 
+                {
+                	KoralUI.popup("Signed up.");
+                },
+                dataType: "json"
+            }).fail(function () {
+                KoralUI.popup("Sign up failed.");
+            });
+            return true;
+        }}];
+        KoralUI.dialog("Sign up", p.get(0), buttons);
+    },
+    
+    addSignIn: function()
+    {
+        if ($(".koralSignUp").length)
+        {
+        	KoralInternal.signUp();
+        }
+    },
 
     history: function ()
     {
@@ -2061,12 +2154,68 @@ var KoralInternal = {
     		return css;
     	};
     	
+
+    	var convertToPngAndDownload_wImages = (elem, downloadName, minSize, cssDeclaration) => 
+    	{
+        	var images = elem.querySelectorAll('image');
+        	var total = images.length;
+        	if (images.length == 0) convertToPngAndDownload(elem, downloadName, minSize, cssDeclaration);
+        	var encoded = 0;
+    		
+        	// convert images within the svg to embedded data; otherwise they are not shown in the exported png 
+        	var toDataURL = (image) => 
+        	{
+        	    var img = new Image();
+        	    // CORS workaround, this won't work in IE<11
+        	    // If you are sure you don't need it, remove the next line and the double onerror handler
+        	    // First try with crossorigin set, it should fire an error if not needed
+        	    img.crossOrigin = 'anonymous';
+
+        	    img.onload = function() {
+        	      // we should now be able to draw it without tainting the canvas
+        	      var canvas = document.createElement('canvas');
+        	      canvas.width = this.width;
+        	      canvas.height = this.height;
+        	      // draw the loaded image
+        	      canvas.getContext('2d').drawImage(this, 0, 0);
+        	      // set our <image>'s href attribute to the dataURL of our canvas
+        	      image.setAttribute('href', canvas.toDataURL());
+        	      
+        	      // that was the last one
+        	      if (++encoded === total) convertToPngAndDownload(elem, downloadName, minSize, cssDeclaration);
+        	    };
+
+        	    // No CORS set in the response		
+        	    img.onerror = function() {
+        	      // save the src
+        	      var oldSrc = this.src;
+        	      // there is an other problem
+        	      this.onerror = function() {
+        	        console.warn('failed to load an image at : ', this.src);
+        	        if (--total === encoded && encoded > 0) convertToPngAndDownload(elem, downloadName, minSize, cssDeclaration);
+        	      };
+        	      // remove the crossorigin attribute
+        	      this.removeAttribute('crossorigin');
+        	      // retry
+        	      this.src = '';
+        	      this.src = oldSrc;
+        	    };
+        	    // load our external image into our img
+        	    var href = image.getAttribute('href');
+        	    // really weird bug that appeared since this answer was first posted
+        	    // we need to force a no-cached request for the crossOrigin be applied
+        	    img.src = href + (href.indexOf('?') > -1 ? + '&1': '?1');
+        	};
+        	
+        	for (var i=0; i<images.length; i++) 
+        	{
+        	    toDataURL(images[i]);
+        	}
+    	};
     	
     	var convertToPngAndDownload = (elem, downloadName, minSize, cssDeclaration) => 
     	{
-    		// adapt svg to at least minimum size, include all css. 
-    		var svg_ = $(elem);
-    		var svg = svg_.clone();
+    		var svg = $(elem);
     		var w = svg.attr("width");
     		var h = svg.attr("height");
     		if (w < minSize || h < minSize)
@@ -2079,8 +2228,9 @@ var KoralInternal = {
     		}
     		svg.css("background-color", "rgb(255,255,255)");
     		svg.find(".figureLetter").remove();
-    		$("<style></style>")
-    		.text(cssDeclaration).appendTo(svg);
+    		
+    		$("<style></style>").text(cssDeclaration).appendTo(svg);
+    		
     		var svgText = new XMLSerializer().serializeToString(svg.get(0));
     		var svgBlob = new Blob([svgText], {type:"image/svg+xml;charset=utf-8"});
     		
@@ -2088,7 +2238,7 @@ var KoralInternal = {
 			.attr("width", w)
 			.attr("height", h)
 			.css("display", "none");
-    		canvas.insertAfter(svg_);
+    		canvas.insertAfter(document.body);
     		var ctx = canvas.get(0).getContext("2d");
     		
     		var domURL = self.URL || self.webkitURL || self;
@@ -2102,7 +2252,7 @@ var KoralInternal = {
 				.attr("href", canvas.get(0).toDataURL())
 				.attr("download", downloadName)
 			
-				a.insertAfter(svg_);
+				a.insertAfter(document.body);
     			a.get(0).click();
     			canvas.remove();
     			a.remove();
@@ -2110,10 +2260,10 @@ var KoralInternal = {
     		img.src = url;
     	};
     	
-    	$("figure").each(function( index, element ) {
-    		$(element).data("index", index);
-    		$(element).data("count", 0);
-    	});
+//    	$("figure").each(function( index, element ) {
+//    		$(element).data("index", index);
+//    		$(element).data("count", 0);
+//    	});
     	
 		$.ajax({
 			url: KoralInternal.koralUrl() + "koral.css",
@@ -2126,7 +2276,10 @@ var KoralInternal = {
     	    		var fig = svg.closest("figure");
     	    		if (fig.length == 0) return;
     	    		
+    	    		var id = svg.attr("id");
+    	    		if (id == null) return;
     	    		
+    	    		/*
     	    		var figIndex = fig.data("index") + 1;
     	    		var id = fig.attr("id");
     	  
@@ -2138,9 +2291,14 @@ var KoralInternal = {
     	    		
     	    		var fi = "" + figIndex;
     	    		if (fi.length == 1) fi = "0" + fi;
-    	    		
+ 
     	    		var name = "fig" + fi + "_" + (id != null ? id + "_" : "") + number + ".png";
-    	    		convertToPngAndDownload(element, name, 1080, cssDeclaration);
+    	    		*/
+    	    		
+    	    		var name = id + ".png";
+    	    		
+    	    		var svgCopy = $(element).clone().get(0);
+    	    		convertToPngAndDownload_wImages(svgCopy, name, 1080, cssDeclaration);
     	    	});
 			}
 		});
@@ -2179,6 +2337,8 @@ var KoralPlot = {
         //xTickLabels: ["0", "",  "",  "",  "", ".5", "",  "",  "",  "", "1"],
         //yTicks:      [0,   0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
         //yTickLabels: ["0", "",  "",  "",  "", ".5", "",  "",  "",  "", "1"],
+        
+        xTickLabelAngle:0,
 
         plotBorder: true,
         left: 56,
@@ -2530,7 +2690,22 @@ var KoralPlot = {
 
                         if (label != null && label.length > 0)
                         { 
-                            xaxis.append("text").text(label).classed("plotText tick", true).attr("text-anchor", "middle").attr("x", screen).attr("y", 18);
+                        	if (conf.xTickLabelAngle == 0)
+                        	{
+                        		xaxis.append("text").text(label).classed("plotText tick", true).attr("text-anchor", "middle").attr("x", screen).attr("y", 18);
+                        	}
+                        	else
+                        	{
+                        		var x = screen;
+                        		var y = 12;
+                        		xaxis.append("text").text(label).classed("plotText tick", true)
+                        		.attr("dominant-baseline", "central")
+                        		.attr("text-anchor", "end")
+                        		.attr("x", x).attr("y", y)
+                        		.attr("transform", "rotate(-" + conf.xTickLabelAngle + "," + x + "," + y + ")");
+                        	}
+                        	
+                            
                         }
                     }
                     var yaxis = svg.append("g").attr("transform", "translate(" + (-conf.plotMargin) + "," + conf.plotHeight + ") rotate(-90)");

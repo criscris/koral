@@ -7,12 +7,14 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
 
 import org.junit.Test;
 
 import xyz.koral.IO;
-import xyz.koral.Table;
+import xyz.koral.table.Table;
+import xyz.koral.table.impl.DoubleMat;
 
 public class DoubleMatTest 
 {
@@ -145,5 +147,12 @@ public class DoubleMatTest
 		}
 		
 		DoubleVecTest.same(t1.sortRows(), t1.rows(t1.orderedIndices()));
+	}
+	
+	@Test
+	public void test_median() 
+	{
+		Table t = Table.numeric(DoubleStream.of(90, 12, 34));
+		assertEquals(34, t.median().getD(), 1e-7);
 	}
 }

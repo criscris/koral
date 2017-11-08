@@ -4,6 +4,10 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import xyz.koral.table.impl.DoubleArray;
+import xyz.koral.table.impl.GrowingBigDoubleArray;
+import xyz.koral.table.impl.GrowingDoubleArray;
+
 public class DoubleArrayTest 
 {
 	@Test

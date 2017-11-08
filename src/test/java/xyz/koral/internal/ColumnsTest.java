@@ -6,7 +6,9 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
-import xyz.koral.Table;
+import xyz.koral.table.Table;
+import xyz.koral.table.impl.Columns;
+import xyz.koral.table.impl.DoubleVec;
 
 public class ColumnsTest {
 

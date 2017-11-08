@@ -25,7 +25,8 @@ import org.junit.Test;
 
 import xyz.koral.HTML;
 import xyz.koral.IO;
-import xyz.koral.Server;
+import xyz.koral.server.KoralServlet;
+import xyz.koral.server.Server;
 
 public class ServerTest 
 {
@@ -54,7 +55,7 @@ public class ServerTest
 		ServerSocket ss = new ServerSocket(0);
 		port = ss.getLocalPort();
 		ss.close();
-		s = new Server(port, configFile);
+		s = new Server(port, new KoralServlet(configFile));
 	}
 		
 	@After

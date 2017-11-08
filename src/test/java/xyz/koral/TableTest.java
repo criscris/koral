@@ -11,6 +11,8 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 
+import xyz.koral.table.Table;
+
 public class TableTest 
 {
 	

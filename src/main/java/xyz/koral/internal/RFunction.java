@@ -11,12 +11,12 @@ import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 
-import xyz.koral.Arg;
-import xyz.koral.DataSource;
 import xyz.koral.IO;
 import xyz.koral.KoralError;
 import xyz.koral.R;
-import xyz.koral.Table;
+import xyz.koral.compute.config.DataSource;
+import xyz.koral.compute.config.Param;
+import xyz.koral.table.Table;
 
 public class RFunction implements KoralFunction 
 {
@@ -60,12 +60,12 @@ public class RFunction implements KoralFunction
 		r.exec(IO.readLines(IO.istream(scriptFile)).collect(Collectors.joining("\n")));
 		StringBuilder callString = new StringBuilder("result = " + functionName + "(");
 		
-		List<Entry<String, Arg>> argList = new ArrayList<>(descriptor.args.entrySet());
+		List<Entry<String, Param>> argList = new ArrayList<>(descriptor.params.entrySet());
 		// get param data into R
 		for (int i=0; i<argList.size(); i++)
 		{
 			String name = argList.get(i).getKey();
-			Arg arg = argList.get(i).getValue();
+			Param arg = argList.get(i).getValue();
 			
 			if ("param".equals(arg.type))
 			{
@@ -81,13 +81,12 @@ public class RFunction implements KoralFunction
 					r.exec("require(jsonlite); " + name + "=fromJSON('" + json + "')");
 				}
 			}
-			else if ("source".equals(arg.type))
+			else if (arg.uri != null)
 			{
-				String source = arg.val.toString();
-				Table t = tableCache == null ? null : tableCache.get(source);
+				Table t = tableCache == null ? null : tableCache.get(arg.uri);
 				if (t == null)
 				{
-					t = Table.csvToData(IO.readCSV(IO.istream(new File(basePath, source))));
+					t = Table.csvToData(IO.readCSV(IO.istream(new File(basePath, arg.uri))));
 				}
 				r.set(name, t);
 			}

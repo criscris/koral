@@ -12,7 +12,9 @@ import java.util.stream.LongStream;
 
 import org.junit.Test;
 
-import xyz.koral.Table;
+import xyz.koral.table.Table;
+import xyz.koral.table.impl.DoubleMat;
+import xyz.koral.table.impl.DoubleVec;
 
 public class DoubleVecTest 
 {
@@ -31,7 +33,7 @@ public class DoubleVecTest
 		singleCol(new DoubleMat(121212, 1), 121212, 123);
 	}
 	
-	static void same(Table t1, Table t2)
+	public static void same(Table t1, Table t2)
 	{
 		assertEquals(t1.nrows(), t2.nrows());
 		assertEquals(t1.ncols(), t2.ncols());

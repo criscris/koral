@@ -10,7 +10,8 @@ import java.util.stream.LongStream;
 
 import org.junit.Test;
 
-import xyz.koral.Table;
+import xyz.koral.table.Table;
+import xyz.koral.table.impl.Mat;
 
 public class MatTest {
 
