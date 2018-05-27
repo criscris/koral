@@ -831,7 +831,7 @@ var KoralInternal = {
                     "lib/bibtex/BibTex.min.js",
                     "lib/papaparse/papaparse.min.js",
                     "lib/code-prettify/prettify.js",
-                    "lib/d3/d3.min.js", // online at https://d3js.org/d3.v3.min.js
+                    "lib/d3/d3.min.js", // online at https://d3js.org/d3.v5.min.js
                     "lib/codemirror/codemirror.js", // 5.25.2
                     "lib/photoswipe/photoswipe.min.js", // online at https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.1/photoswipe.min.js
                     "lib/photoswipe/photoswipe-ui-default.min.js",
@@ -2136,7 +2136,7 @@ var KoralInternal = {
         });
     },
     
-    downloadFigures: function () {
+    downloadFigures: function (figIDs) {
     	
     	// may not include everything because of CORS
     	var cssDeclaration_ = () =>
@@ -2215,7 +2215,7 @@ var KoralInternal = {
     	
     	var convertToPngAndDownload = (elem, downloadName, minSize, cssDeclaration) => 
     	{
-    		var svg = $(elem);
+            var svg = $(elem);
     		var w = svg.attr("width");
     		var h = svg.attr("height");
     		if (w < minSize || h < minSize)
@@ -2227,7 +2227,7 @@ var KoralInternal = {
     			svg.attr("height", h);
     		}
     		svg.css("background-color", "rgb(255,255,255)");
-    		svg.find(".figureLetter").remove();
+            //svg.find(".figureLetter").remove();
     		
     		$("<style></style>").text(cssDeclaration).appendTo(svg);
     		
@@ -2270,36 +2270,38 @@ var KoralInternal = {
 			dataType: "text",
 			success: function(cssDeclaration)
 			{
-		    	$("svg").each( function( index, element )
-    	    	{
-    	    		var svg = $(element);
-    	    		var fig = svg.closest("figure");
-    	    		if (fig.length == 0) return;
-    	    		
-    	    		var id = svg.attr("id");
-    	    		if (id == null) return;
-    	    		
-    	    		/*
-    	    		var figIndex = fig.data("index") + 1;
-    	    		var id = fig.attr("id");
-    	  
-    	    		fig.data("count", fig.data("count") + 1);
-    	    		var number = fig.data("count");
-    	    		
-    	    		var fl = svg.find(".figureLetter");
-    	    		if (fl.length > 0) number = fl.first().get(0).innerHTML;
-    	    		
-    	    		var fi = "" + figIndex;
-    	    		if (fi.length == 1) fi = "0" + fi;
- 
-    	    		var name = "fig" + fi + "_" + (id != null ? id + "_" : "") + number + ".png";
-    	    		*/
-    	    		
-    	    		var name = id + ".png";
-    	    		
-    	    		var svgCopy = $(element).clone().get(0);
-    	    		convertToPngAndDownload_wImages(svgCopy, name, 1080, cssDeclaration);
-    	    	});
+		    	if (figIDs == null)
+                {
+                    $("svg").each( function( index, element )
+                    {
+                        var svg = $(element);
+                        var fig = svg.closest("figure");
+                        if (fig.length == 0) return;
+                        
+                        var id = svg.attr("id");
+                        if (id == null) return;
+                        
+                        var name = id + ".png";
+                        
+                        var svgCopy = $(element).clone().get(0);
+                        convertToPngAndDownload_wImages(svgCopy, name, 1080, cssDeclaration);
+                    });
+                }
+                else
+                {
+                    if (!Array.isArray(figIDs))
+                    {
+                        figIDs = [figIDs];
+                    }
+
+                    for (var id of figIDs)
+                    {
+                        var svg = $("#" + id);
+                        var name = id + ".png";
+                        var svgCopy = svg.clone().get(0);
+                        convertToPngAndDownload_wImages(svgCopy, name, 1080, cssDeclaration);
+                    }
+                }
 			}
 		});
     },

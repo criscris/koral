@@ -11,9 +11,12 @@ import java.util.Map;
 
 import com.google.gson.reflect.TypeToken;
 
+import xyz.koral.compute.config.DataSource;
+import xyz.koral.compute.config.Param;
 import xyz.koral.internal.JavaFunction;
 import xyz.koral.internal.KoralFunction;
 import xyz.koral.internal.RFunction;
+import xyz.koral.table.Table;
 
 /**
  * 
@@ -80,16 +83,15 @@ public class Compute
 					throw new KoralError("DataSource " + source + " not specified.");
 				}
 				
-				if (ds.args != null)
+				if (ds.params != null)
 				{
-					for (Arg arg : ds.args.values())
+					for (Param arg : ds.params.values())
 					{
-						if ("source".equals(arg.type))
+						if (arg.val == null)
 						{
-							String sourcePath = arg.val.toString();
-							
-							if (!new File(basePath, sourcePath).exists() && !new File(basePath, sourcePath + ".gz").exists())
-								consume(sourcePath);
+							if (arg.uri == null) throw new KoralError("uri for param in " + source + " not specified.");
+							if (!new File(basePath, arg.uri).exists() && !new File(basePath, arg.uri + ".gz").exists())
+								consume(arg.uri);
 						}
 					}
 				}
@@ -154,5 +156,10 @@ public class Compute
 	public static void compute(File basePath, String name, DataSource ds, OutputStream os)
 	{
 		init(basePath, name, ds).run(() -> os);
+	}
+	
+	public static void compute(File basePath, String name, DataSource ds)
+	{
+		init(basePath, name, ds).run();
 	}
 }

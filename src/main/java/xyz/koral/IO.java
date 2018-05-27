@@ -113,7 +113,7 @@ public interface IO
 		
 		try
 		{
-			return new Double(value);
+			return Double.parseDouble(value);
 		}
 		catch (NumberFormatException ex)
 		{
@@ -146,7 +146,7 @@ public interface IO
 	{
 		try 
 		{
-			return file.getName().endsWith(".gz") ? new GZIPOutputStream(new FileOutputStream(file)) 
+			return file.getName().endsWith(".gz") ? new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(file))) 
 					: new FileOutputStream(file);
 		} 
 		catch (IOException ex) 

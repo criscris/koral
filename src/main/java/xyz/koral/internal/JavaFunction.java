@@ -118,6 +118,11 @@ public class JavaFunction implements KoralFunction
 			int i2 = genericTypeName.lastIndexOf(">");
 			if (i1 == -1 || i2 == -1) throw new KoralError("Unknown generic type for " + genericTypeName);
 			String className = genericTypeName.substring(i1 + 1, i2);
+			if (className.endsWith("[]")) // array types have different convention for Class.forName()
+			{
+				className = "[L" + className.substring(0,  className.length() - 2) + ";"; 
+			}
+			
 			try 
 			{
 				return Class.forName(className);
