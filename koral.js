@@ -2334,7 +2334,7 @@ var KoralPlot = {
         //xLabel: "x",
         //yLabel: "y",
         //xTransform: { type: "linear", min: 0, max: 1}   // { type:"log", min: 1e-7 max: 1}  //d3.scale.linear().domain([0, 1]),
-        //yTransform: d3.scale.linear().domain([0, 1]),
+        //yTransform: d3.scaleLinear().domain([0, 1]),
         //xTicks:      [0,   0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
         //xTickLabels: ["0", "",  "",  "",  "", ".5", "",  "",  "",  "", "1"],
         //yTicks:      [0,   0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
@@ -2616,7 +2616,7 @@ var KoralPlot = {
                         for (var i = 0; i < conf.xTicks.length; i++)
                             conf.xTickLabels[i] = "" + conf.xTicks[i];
                     }
-                    conf.xTransform = d3.scale.linear().domain([conf.xTransform.min, conf.xTransform.max]);
+                    conf.xTransform = d3.scaleLinear().domain([conf.xTransform.min, conf.xTransform.max]);
                 } else if (conf.xTransform.type == "log")
                 {
                     if (conf.xTransform.min == 0) conf.xTransform.min = conf.xTransform.max >= 1 ? 1e-5 : conf.xTransform.max/1000.0; // prevent log10(0)
@@ -2626,7 +2626,7 @@ var KoralPlot = {
                         conf.xTicks = t.ticks;
                         conf.xTickLabels = t.tickLabels;
                     }
-                    conf.xTransform = d3.scale.log().domain([conf.xTransform.min, conf.xTransform.max]);
+                    conf.xTransform = d3.scaleLog().domain([conf.xTransform.min, conf.xTransform.max]);
                 }
 
                 if (conf.yTransform == null)
@@ -2641,7 +2641,7 @@ var KoralPlot = {
                         for (var i = 0; i < conf.yTicks.length; i++)
                             conf.yTickLabels[i] = "" + conf.yTicks[i];
                     }
-                    conf.yTransform = d3.scale.linear().domain([conf.yTransform.min, conf.yTransform.max]);
+                    conf.yTransform = d3.scaleLinear().domain([conf.yTransform.min, conf.yTransform.max]);
                 } else if (conf.yTransform.type == "log")
                 {
                     if (conf.yTransform.min == 0) conf.yTransform.min = conf.yTransform.max >= 1 ? 1e-5 : conf.yTransform.max/1000.0; // prevent log10(0)
