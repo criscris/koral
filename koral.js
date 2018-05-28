@@ -2333,7 +2333,7 @@ var KoralPlot = {
         // examples:
         //xLabel: "x",
         //yLabel: "y",
-        //xTransform: { type: "linear", min: 0, max: 1}   // { type:"log", min: 1e-7 max: 1}  //d3.scale.linear().domain([0, 1]),
+        //xTransform: { type: "linear", min: 0, max: 1}   // { type:"log", min: 1e-7 max: 1}  //d3.scaleLinear().domain([0, 1]),
         //yTransform: d3.scaleLinear().domain([0, 1]),
         //xTicks:      [0,   0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
         //xTickLabels: ["0", "",  "",  "",  "", ".5", "",  "",  "",  "", "1"],
@@ -2651,7 +2651,7 @@ var KoralPlot = {
                         conf.yTicks = t.ticks;
                         conf.yTickLabels = t.tickLabels;	
                     }                
-                    conf.yTransform = d3.scale.log().domain([conf.yTransform.min, conf.yTransform.max]);
+                    conf.yTransform = d3.scaleLog().domain([conf.yTransform.min, conf.yTransform.max]);
                 }
                 
                 if (!isInset)
@@ -2933,7 +2933,7 @@ var KoralPlot = {
     {
     	var g = d3.select(domPart);
     	var colNames = Object.getOwnPropertyNames(data[0]);
-        var cinterp = drawConf.colorMapper != null ? d3.scale.linear().domain(drawConf.colorMapper.in).interpolate(d3.interpolateRgb).range(drawConf.colorMapper.out) : null;
+        var cinterp = drawConf.colorMapper != null ? d3.scaleLinear().domain(drawConf.colorMapper.in).interpolate(d3.interpolateRgb).range(drawConf.colorMapper.out) : null;
 
         for (var i = 0; i < data.length; i++)
         {
