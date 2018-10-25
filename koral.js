@@ -828,7 +828,7 @@ var KoralInternal = {
         var scriptsFirstPass =
                 ["lib/mathjax/MathJax.js?config=TeX-MML-AM_CHTML", // online at https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
                     "lib/jquery/jquery-2.2.4.min.js", // online at https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js
-                    "lib/bibtex/BibTex.min.js",
+                    "lib/bibtex/BibTex.js",
                     "lib/papaparse/papaparse.min.js",
                     "lib/code-prettify/prettify.js",
                     "lib/d3/d3.min.js", // online at https://d3js.org/d3.v5.min.js
@@ -1866,9 +1866,6 @@ var KoralInternal = {
         p.append($("<label for='password'>Password</label>"));
         var pwdField = $("<input tabindex='2' id='password' style='width:100%;' type='password'/>");
         p.append(pwdField);
-        
-        console.log("cookie");
-        console.log(document.cookie);
 
         var buttons = [{name: "Sign up", onclickfunc: function ()
         {
@@ -1895,6 +1892,29 @@ var KoralInternal = {
         {
         	KoralInternal.signUp();
         }
+    },
+    
+    addProjectList: function() {
+        $.getJSON($("#projects").attr("src"), function(data) 
+        {
+            if (!data || data.length == 0) return;
+
+            var p = $(".koralProjects");
+            p.empty();
+            p.css("margin", "2rem");
+            p.append($("<h3></h3>").text("Projects"));
+            
+            if (data.authoredProjects)
+            {
+            	for (var i=0; i<data.authoredProjects.length; i++)
+            	{
+            		var name = data.authoredProjects[i];
+            		var link = $("<p></p>");
+            		link.append($("<a></a>").attr("href", name + "/").text(name));
+            		p.append(link);
+            	}
+            }
+        });
     },
 
     history: function ()
